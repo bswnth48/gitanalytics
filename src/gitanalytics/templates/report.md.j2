@@ -1,0 +1,22 @@
+# Git Analytics Report
+
+**Generated on:** {{ generated_at }}
+**Repository:** {{ repo_path }}
+**Date Range:** {{ start_date }} to {{ end_date }}
+
+---
+
+## AI-Generated Summary
+
+*A high-level summary of the development activity during this period will be generated here in a future version.*
+
+---
+
+## Commits ({{ commits|length }})
+
+{% for item in analysis_results %}
+### {{ item.summary }}
+- **Author:** {{ item.commit.author_name }}
+- **Date:** {{ item.commit.date.strftime('%Y-%m-%d %H:%M:%S') }}
+- **Commit:** `{{ item.commit.commit_hash }}`
+{% endfor %}

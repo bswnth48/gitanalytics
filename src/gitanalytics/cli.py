@@ -2,6 +2,7 @@ import click
 from rich.console import Console
 from .git_analyzer import GitAnalyzer
 from .ai_summarizer import AISummarizer
+from .report_builder import ReportBuilder
 import git
 
 # Initialize a Rich Console for beautiful output
@@ -24,8 +25,7 @@ def analyze(repo_path, start_date, end_date, output):
     Analyze a Git repository and generate a report.
     """
     console.print(f"[bold green]🚀 Starting analysis for repository:[/] [cyan]{repo_path}[/]")
-    console.print(f"   - [bold]Start Date:[/] {start_date or 'Not specified'}")
-    console.print(f"   - [bold]End Date:[/] {end_date or 'Not specified'}")
+    console.print(f"   - [bold]Date Range:[/] {start_date or 'First Commit'} to {end_date or 'Latest Commit'}")
     console.print(f"   - [bold]Output Format:[/] {output}")
 
     try:
@@ -41,14 +41,15 @@ def analyze(repo_path, start_date, end_date, output):
         summarizer = AISummarizer()
         summaries = summarizer.summarize_commits(commits)
 
-        console.print("\n[bold green]📊 AI-Generated Summaries:[/bold green]")
-        for i, summary in enumerate(summaries):
-            console.print(f"  [cyan]{i+1}.[/] {summary}")
+        builder = ReportBuilder(repo_path, start_date, end_date)
 
-        # --- Placeholder for future logic ---
-        console.print("\n[yellow]🚧 Report generation logic not yet implemented.[/yellow]\n")
+        if output == 'markdown':
+            report_file = builder.generate_markdown_report(commits, summaries)
+        else: # output == 'json'
+            report_file = builder.generate_json_report(commits, summaries)
 
-        console.print("[bold green]✅ Analysis finished.[/]")
+        console.print(f"\n[bold green]✅ Report successfully generated![/bold green]")
+        console.print(f"   - [bold]File:[/] {report_file}")
 
     except git.InvalidGitRepositoryError:
         console.print(f"\n[bold red]Error:[/] The path '{repo_path}' is not a valid Git repository.")
