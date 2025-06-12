@@ -40,13 +40,14 @@ def analyze(repo_path, start_date, end_date, output):
 
         summarizer = AISummarizer()
         summaries = summarizer.summarize_commits(commits)
+        executive_summary = summarizer.generate_executive_summary(summaries)
 
         builder = ReportBuilder(repo_path, start_date, end_date)
 
         if output == 'markdown':
-            report_file = builder.generate_markdown_report(commits, summaries)
+            report_file = builder.generate_markdown_report(commits, summaries, executive_summary)
         else: # output == 'json'
-            report_file = builder.generate_json_report(commits, summaries)
+            report_file = builder.generate_json_report(commits, summaries, executive_summary)
 
         console.print(f"\n[bold green]✅ Report successfully generated![/bold green]")
         console.print(f"   - [bold]File:[/] {report_file}")

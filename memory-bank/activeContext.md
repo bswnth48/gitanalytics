@@ -1,20 +1,19 @@
-# Active Context: Project Completion
+# Active Context: Implement High-Level Executive Summary
 
 ## Current Focus
 
-The MVP (Minimum Viable Product) is now feature-complete. The current focus is on finalizing documentation, cleaning up any loose ends, and preparing for a potential version `0.1.0` release.
+With the core MVP complete, we are now moving on to advanced analytical features. The immediate goal is to implement a "High-Level Executive Summary". This involves making a second AI call to synthesize a narrative summary from the list of individual commit summaries.
 
 ## Recent Changes
 
-- Implemented the `ReportBuilder` class in `src/gitanalytics/report_builder.py`.
-- Created a Jinja2 template for clean Markdown report generation.
-- Added a method to generate a structured JSON report.
-- Integrated the `ReportBuilder` into the CLI, controlled by the `--output` flag.
-- Successfully tested the end-to-end report generation for both Markdown and JSON formats.
+- Completed and tested the full MVP of the Git Analytics CLI.
+- Agreed on a new roadmap for advanced analytical features to make the tool more productive.
+- The new roadmap includes: High-Level Summaries, Code-Aware Analysis, and Thematic Grouping.
 
 ## Next Steps
 
-1.  **Finalize Documentation:** Update the `README.md` with complete installation and usage instructions.
-2.  **Review and Refactor:** Perform a final code review for any potential cleanup or refactoring.
-3.  **Tag Release:** Create a `v0.1.0` tag in Git to mark the first stable release.
-4.  **Future Enhancements:** Brainstorm and document potential future features (e.g., advanced analytics, more output formats).
+1.  **Enhance AI Summarizer:** Add a new method `generate_executive_summary` to `ai_summarizer.py` that takes all individual summaries and prompts an AI to create a high-level overview.
+2.  **Update Report Template:** Modify `report.md.j2` to replace the placeholder text with a variable for the new executive summary.
+3.  **Update Report Builder:** Adjust `report_builder.py` to accept the executive summary and pass it to the template.
+4.  **Update CLI:** Modify `cli.py` to orchestrate the new workflow: get commits -> get individual summaries -> get executive summary -> build report.
+5.  **Test:** Run the analysis and verify the new summary appears correctly in the Markdown report.

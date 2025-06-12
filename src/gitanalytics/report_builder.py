@@ -27,7 +27,7 @@ class ReportBuilder:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         return f"git_analytics_report_{timestamp}.{extension}"
 
-    def generate_markdown_report(self, commits: List[Commit], summaries: List[str]) -> str:
+    def generate_markdown_report(self, commits: List[Commit], summaries: List[str], executive_summary: str) -> str:
         """
         Generates a Markdown report from the data.
         """
@@ -41,7 +41,8 @@ class ReportBuilder:
             end_date=self.end_date,
             generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             commits=commits,
-            analysis_results=analysis_results
+            analysis_results=analysis_results,
+            executive_summary=executive_summary
         )
 
         filename = self._generate_report_filename("md")
@@ -49,7 +50,7 @@ class ReportBuilder:
             f.write(rendered_report)
         return filename
 
-    def generate_json_report(self, commits: List[Commit], summaries: List[str]) -> str:
+    def generate_json_report(self, commits: List[Commit], summaries: List[str], executive_summary: str) -> str:
         """
         Generates a JSON report from the data.
         """
@@ -71,6 +72,7 @@ class ReportBuilder:
                 'generated_at': datetime.now().isoformat(),
                 'commit_count': len(commits)
             },
+            'executive_summary': executive_summary,
             'analysis_results': analysis_results
         }
 

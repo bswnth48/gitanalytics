@@ -16,7 +16,7 @@ class AISummarizer:
         """
         Initializes the AISummarizer using settings from config.
         """
-        if not settings.OPENROUTER_API_KEY or settings.OPENROUTER_API_KEY == "your-key-goes-here":
+        if not settings.OPENROUTER_API_KEY or "your-key-goes-here" in settings.OPENROUTER_API_KEY:
             raise ValueError("OpenRouter API key not found. Please create a .env file and set the OPENROUTER_API_KEY.")
 
         self.client = openai.OpenAI(
@@ -28,50 +28,77 @@ class AISummarizer:
     def summarize_commits(self, commits: List[Commit]) -> List[str]:
         """
         Generates summaries for a list of commit messages.
-
-        Args:
-            commits: A list of Commit objects.
-
-        Returns:
-            A list of strings, where each string is a summary of a commit.
         """
         if not commits:
             return []
 
-        console.print(f"\n[bold yellow]🤖 Contacting AI ({self.model}) for summarization...[/bold yellow]")
+        console.print(f"\n[bold yellow]🤖 Generating individual commit summaries...[/bold yellow]")
 
-        # For now, we will summarize one by one. Batching can be a future optimization.
         summaries = []
         for commit in commits:
             try:
                 prompt = f"""
                 Analyze the following git commit and provide a concise, one-sentence summary of its purpose.
+                The summary should be suitable for a changelog.
 
-                Author: {commit.author_name}
-                Date: {commit.date.strftime('%Y-%m-%d')}
-                Message:
+                Commit Message:
                 ---
                 {commit.message}
                 ---
-
-                One-sentence summary:
                 """
-
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=[
-                        {"role": "system", "content": "You are an expert software engineer who provides concise git commit summaries."},
+                        {"role": "system", "content": "You are an expert software engineer who writes concise, insightful git commit summaries."},
                         {"role": "user", "content": prompt},
                     ],
-                    temperature=0.5,
+                    temperature=0.4,
                     max_tokens=60,
                 )
                 summary = response.choices[0].message.content.strip()
                 summaries.append(summary)
-                console.print(f"   - [green]Summarized commit[/] [cyan]{commit.commit_hash[:7]}[/]")
             except openai.APIError as e:
-                error_message = f"OpenAI API error for commit {commit.commit_hash[:7]}: {e}"
+                error_message = f"API error for commit {commit.commit_hash[:7]}: {e}"
                 console.print(f"[bold red]Error:[/] {error_message}")
-                summaries.append(f"Error summarizing commit: {commit.commit_hash[:7]}")
+                summaries.append(f"Error summarizing commit.")
 
+        console.print(f"   - [green]Summarized {len(summaries)} commits.[/]")
         return summaries
+
+    def generate_executive_summary(self, commit_summaries: List[str]) -> str:
+        """
+        Generates a high-level executive summary from a list of commit summaries.
+        """
+        console.print(f"\n[bold yellow]✨ Generating high-level executive summary...[/bold yellow]")
+
+        summaries_text = "\n".join(f"- {s}" for s in commit_summaries)
+        prompt = f"""
+        Based on the following list of commit summaries from a development period, please provide a high-level,
+        three-sentence executive summary. This summary should capture the main themes of the work, such as new features,
+        major refactors, or significant bug fixes.
+
+        Commit Summaries:
+        ---
+        {summaries_text}
+        ---
+
+        Executive Summary (3 sentences):
+        """
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a CTO who provides high-level summaries of development progress for technical and non-technical stakeholders."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.6,
+                max_tokens=200,
+            )
+            executive_summary = response.choices[0].message.content.strip()
+            console.print("   - [green]Executive summary created.[/]")
+            return executive_summary
+        except openai.APIError as e:
+            error_message = f"API error during executive summary generation: {e}"
+            console.print(f"[bold red]Error:[/] {error_message}")
+            return "Could not generate executive summary due to an API error."
