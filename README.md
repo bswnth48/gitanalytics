@@ -1,72 +1,111 @@
 # Git Analytics CLI
 
-[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://github.com/your-username/your-repo/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/your-repo/actions)
+[![PyPI version](https://badge.fury.io/py/gitanalytics.svg)](https://badge.fury.io/py/gitanalytics)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-An AI-powered command-line tool to analyze Git repositories and generate insightful summaries of commit history.
+**Git Analytics** is a powerful, AI-driven command-line tool that transforms your Git repository history into insightful, easy-to-read reports. It intelligently summarizes commits, groups them by theme, and provides high-level executive summaries, helping you understand project progress at a glance.
 
-## Overview
+---
 
-This tool automates the process of reviewing development activity in a Git repository. It extracts commit data within a specified date range, uses powerful AI models to understand the changes, and generates clean, easy-to-read reports in Markdown or JSON format.
+## Features
 
-## Core Features
+-   **🤖 AI-Powered Summaries:** Uses advanced AI models to generate detailed, code-aware summaries for each commit.
+-   **🧩 Thematic Analysis:** Automatically categorizes commits into themes like `Features`, `Bug Fixes`, `Documentation`, and `Refactoring`.
+-   **📄 Executive Summaries:** Generates a high-level, multi-sentence summary of the entire analysis period, perfect for reports and stakeholder updates.
+-   **🌿 Branch Selection:** Analyze any branch in your repository, not just the one you have checked out, using the `--branch` option.
+-   **⚡️ Smart Caching:** Caches results to provide near-instantaneous reports on subsequent runs and to minimize API calls.
+-   **💰 Cost Monitoring:** Tracks API token usage and provides an estimated cost for each analysis run, giving you full visibility.
+-   **📝 Multiple Formats:** Generate reports in both Markdown and JSON formats.
 
-- **AI-Powered Summaries:** Leverage large language models to get the story behind the commits.
-- **Date Filtering:** Focus your analysis on specific periods (e.g., last sprint, previous quarter).
-- **Flexible Output:** Generate reports in Markdown for documentation or JSON for programmatic use.
-- **Configurable AI:** Easily switch between different AI models supported by OpenRouter.
-- **Simple Setup:** Uses a standard `.env` file for configuration.
+## Installation
 
-## Getting Started
+This project is managed with `uv`, a fast and modern Python package manager.
 
-### 1. Setup
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/gitanalytics.git
+    cd gitanalytics
+    ```
 
-First, clone this repository and set up the development environment.
+2.  **Create and activate a virtual environment:**
+    ```bash
+    uv venv
+    source .venv/bin/activate  # On Windows, use `.venv\Scripts\activate`
+    ```
 
-```sh
-# Clone the repository
-git clone <repository-url>
-cd git-analytics-cli
+3.  **Install the package:**
+    ```bash
+    uv pip install -e .
+    ```
+    The tool is now available as the `gitanalytics` command.
 
-# Install uv if you don't have it
-curl -LsSf https://astral.sh/uv/install.sh | sh
+## Configuration
 
-# Create virtual environment and install dependencies
-uv venv
-source .venv/bin/activate
-uv pip install -e .
-```
+The tool requires an API key from an OpenAI-compatible service like OpenRouter.
 
-### 2. Configuration
-
-The tool requires an API key to communicate with the AI models.
-
-1.  Copy the example environment file:
-    ```sh
+1.  **Create a `.env` file** in the root of the project by copying the example file:
+    ```bash
     cp .env.example .env
     ```
-2.  Open the new `.env` file and add your API key:
-    - Get a free key from [OpenRouter](https://openrouter.ai).
-    - Set `OPENROUTER_API_KEY="your-key-goes-here"`.
-    - You can also change the `AI_MODEL` to any free or paid model you prefer.
 
-### 3. Usage
+2.  **Edit the `.env` file** and add your API key:
+    ```
+    # .env
+    OPENROUTER_API_KEY="your-secret-key-goes-here"
+    OPENROUTER_MODEL_NAME="qwen/qwen-2.5-72b-chat"
+    ```
 
-Run the `analyze` command on any Git repository.
+## Usage
 
-```sh
-# Analyze the current directory and create a Markdown report
-gitanalytics analyze
+The main command is `analyze`. It analyzes the repository in the current directory by default.
 
-# Analyze a different repository and create a JSON report
-gitanalytics analyze /path/to/your/repo --output json
-
-# Analyze with a specific date range
-gitanalytics analyze --start-date 2024-01-01 --end-date 2024-03-31
+```bash
+gitanalytics analyze [OPTIONS] [REPO_PATH]
 ```
 
-A report file (e.g., `git_analytics_report_YYYYMMDD_HHMMSS.md`) will be created in your current directory.
+### Examples
 
-## License
+-   **Analyze the current repository:**
+    ```bash
+    gitanalytics analyze
+    ```
 
-This project is licensed under the MIT License.
+-   **Analyze a specific repository path:**
+    ```bash
+    gitanalytics analyze /path/to/your/repo
+    ```
+
+-   **Analyze a specific branch:**
+    ```bash
+    gitanalytics analyze --branch feature/new-login
+    ```
+
+-   **Analyze commits within a date range:**
+    ```bash
+    gitanalytics analyze --start-date 2023-01-01 --end-date 2023-01-31
+    ```
+
+-   **Generate a JSON report:**
+    ```bash
+    gitanalytics analyze --output json
+    ```
+
+-   **Force a fresh analysis by ignoring the cache:**
+    ```bash
+    gitanalytics analyze --no-cache
+    ```
+
+## Development
+
+To set up a development environment with all testing dependencies, run:
+
+```bash
+uv pip install -e ".[dev]"
+```
+
+To run the automated test suite:
+
+```bash
+pytest
+```
