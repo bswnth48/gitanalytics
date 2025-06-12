@@ -1,6 +1,7 @@
 import click
 from rich.console import Console
-from .git_analyzer import GitAnalyzer, Commit
+from .git_analyzer import GitAnalyzer
+from .ai_summarizer import AISummarizer
 import git
 
 # Initialize a Rich Console for beautiful output
@@ -37,14 +38,22 @@ def analyze(repo_path, start_date, end_date, output):
 
         console.print(f"\n[bold green]✅ Found {len(commits)} commits.[/bold green]")
 
-        # --- Placeholder for future logic ---
-        console.print("\n[yellow]🚧 AI summarization logic not yet implemented.[/yellow]")
-        console.print("[yellow]🚧 Report generation logic not yet implemented.[/yellow]\n")
+        summarizer = AISummarizer()
+        summaries = summarizer.summarize_commits(commits)
 
-        console.print("[bold green]✅ Analysis placeholder finished.[/]")
+        console.print("\n[bold green]📊 AI-Generated Summaries:[/bold green]")
+        for i, summary in enumerate(summaries):
+            console.print(f"  [cyan]{i+1}.[/] {summary}")
+
+        # --- Placeholder for future logic ---
+        console.print("\n[yellow]🚧 Report generation logic not yet implemented.[/yellow]\n")
+
+        console.print("[bold green]✅ Analysis finished.[/]")
 
     except git.InvalidGitRepositoryError:
         console.print(f"\n[bold red]Error:[/] The path '{repo_path}' is not a valid Git repository.")
+    except ValueError as e:
+        console.print(f"\n[bold red]Configuration Error:[/] {e}")
     except Exception as e:
         console.print(f"\n[bold red]An unexpected error occurred:[/] {e}")
 

@@ -1,23 +1,22 @@
-# Active Context: Git Analyzer Implementation
+# Active Context: Report Generation
 
 ## Current Focus
 
-The CLI skeleton has been successfully implemented and verified. The next critical step is to build the `Git Analyzer` component. This module will be responsible for interacting with a local Git repository to extract commit data based on specified criteria.
+The core analysis engine is now complete. The tool can successfully extract commits and use an AI model to generate summaries. The final major step is to implement the `ReportBuilder`. This component will take the analyzed data and format it into user-friendly Markdown or JSON files.
 
 ## Recent Changes
 
-- Implemented the basic CLI structure in `src/gitanalytics/cli.py` using `click` and `rich`.
-- Created a `setup.py` file to make the package installable.
-- Installed the package in editable mode using `uv pip install -e .`.
-- Verified the `gitanalytics analyze` command works and shows the correct placeholder output.
-- Initialized a Git repository in the project root.
+- Implemented the `AISummarizer` class, which successfully calls the OpenRouter API.
+- Added a robust configuration system using a `.env` file and `pydantic-settings` to manage the API key and model name.
+- Created a `.gitignore` file to protect the `.env` file.
+- Integrated the `AISummarizer` into the CLI.
+- Successfully tested the end-to-end workflow, from commit extraction to AI summarization.
 
 ## Next Steps
 
-1.  **Implement Git Analyzer (`git_analyzer.py`):**
-    - Create a class `GitAnalyzer`.
-    - Add a method to open a repository using `GitPython`.
-    - Add a method to extract commits, filtering by an optional `start_date` and `end_date`.
-    - Define a data structure (e.g., a Pydantic model or dataclass) to hold commit information (hash, author, date, message).
-2.  **Integrate Analyzer with CLI:** Update `cli.py` to call the new `GitAnalyzer` and print the number of commits found.
-3.  **Update Progress:** Document the completion of the Git Analyzer in `progress.md` and `CHANGELOG.md`.
+1.  **Implement Report Builder (`report_builder.py`):**
+    - Create a class `ReportBuilder`.
+    - Implement a method to generate a Markdown report using a Jinja2 template.
+    - Implement a method to generate a JSON report.
+2.  **Integrate Report Builder with CLI:** Update `cli.py` to call the `ReportBuilder` based on the `--output` option and save the result to a file.
+3.  **Finalize and Document:** Update the `README.md` with final usage instructions and prepare for a version `0.1.0` release.
