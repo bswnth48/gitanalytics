@@ -1,5 +1,7 @@
 import click
 from rich.console import Console
+from .git_analyzer import GitAnalyzer, Commit
+import git
 
 # Initialize a Rich Console for beautiful output
 console = Console()
@@ -25,12 +27,27 @@ def analyze(repo_path, start_date, end_date, output):
     console.print(f"   - [bold]End Date:[/] {end_date or 'Not specified'}")
     console.print(f"   - [bold]Output Format:[/] {output}")
 
-    # --- Placeholder for future logic ---
-    console.print("\n[yellow]🚧 Git analysis logic not yet implemented.[/yellow]")
-    console.print("[yellow]🚧 AI summarization logic not yet implemented.[/yellow]")
-    console.print("[yellow]🚧 Report generation logic not yet implemented.[/yellow]\n")
+    try:
+        analyzer = GitAnalyzer(repo_path)
+        commits = analyzer.get_commits(start_date, end_date)
 
-    console.print("[bold green]✅ Analysis placeholder finished.[/]")
+        if not commits:
+            console.print("\n[yellow]No commits found in the specified date range.[/yellow]")
+            return
+
+        console.print(f"\n[bold green]✅ Found {len(commits)} commits.[/bold green]")
+
+        # --- Placeholder for future logic ---
+        console.print("\n[yellow]🚧 AI summarization logic not yet implemented.[/yellow]")
+        console.print("[yellow]🚧 Report generation logic not yet implemented.[/yellow]\n")
+
+        console.print("[bold green]✅ Analysis placeholder finished.[/]")
+
+    except git.InvalidGitRepositoryError:
+        console.print(f"\n[bold red]Error:[/] The path '{repo_path}' is not a valid Git repository.")
+    except Exception as e:
+        console.print(f"\n[bold red]An unexpected error occurred:[/] {e}")
+
 
 if __name__ == '__main__':
     main()

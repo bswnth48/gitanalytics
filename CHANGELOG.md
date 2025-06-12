@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - YYYY-MM-DD
 
 ### Added
+- **CLI Skeleton:**
+  - Implemented the main command group and `analyze` command in `src/gitanalytics/cli.py` using `click`.
+  - Added `rich` for styled console output.
+  - Created `setup.py` to define the `gitanalytics` console script entry point.
+  - Verified the CLI is installable and works correctly with placeholder logic.
 - **Project Initialization:**
   - Set up project structure with `uv` package manager.
-  - Created virtual environment and installed initial dependencies (`click`, `gitpython`, `openai`, `jinja2`, `rich`, `pydantic`, `requests`, `psutil`).
-  - Scaffolded the `src/gitanalytics` directory with all planned modules.
-  - Initialized the `memory-bank/` with comprehensive project documentation.
-  - Created this `CHANGELOG.md` and a placeholder `README.md`.
+  - Created virtual environment and installed initial dependencies (`
