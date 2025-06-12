@@ -38,34 +38,36 @@ class GitAnalyzer:
             print(f"Error: {e}")
             raise
 
-    def get_commits(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[Commit]:
+    def get_commits(self, branch: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[Commit]:
         """
-        Extracts commits from the repository within a given date range.
-
-        Args:
-            start_date: The start date in YYYY-MM-DD format.
-            end_date: The end date in YYYY-MM-DD format.
-
-        Returns:
-            A list of Commit objects.
+        Extracts commits. If a branch is specified, it shows commits on that
+        branch which are not in the 'main' branch. Otherwise, it shows commits
+        from the current HEAD.
         """
+        if branch:
+            # Assumes 'main' is the base branch. This could be configurable in the future.
+            commit_spec = f"main..{branch}"
+        else:
+            commit_spec = self.repo.head.ref
+
         kwargs = {}
         if start_date:
             kwargs['after'] = start_date
         if end_date:
             kwargs['before'] = end_date
 
-        commits_iter = self.repo.iter_commits(**kwargs)
+        try:
+            commits_iter = self.repo.iter_commits(commit_spec, **kwargs)
+        except git.GitCommandError:
+             # Fallback for initial commit or other issues
+            commits_iter = self.repo.iter_commits(branch or self.repo.head.ref, **kwargs)
 
         commit_list = []
         for commit in commits_iter:
-            # Get the diff for the commit
             try:
                 if commit.parents:
-                    # Diff against the first parent for simplicity
                     diff_text = self.repo.git.diff(commit.parents[0].hexsha, commit.hexsha)
                 else:
-                    # This is the initial commit, diff against the empty tree
                     diff_text = self.repo.git.show(commit.hexsha)
             except Exception:
                 diff_text = "Could not retrieve diff."

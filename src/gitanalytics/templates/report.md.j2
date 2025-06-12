@@ -14,13 +14,9 @@
 
 ## Thematic Analysis
 
-{% for category, items in categorized_commits.items() %}
-### {{ category }} ({{ items|length }})
-
-{% for item in items %}
-- **{{ item.summary }}**
-  - **Author:** {{ item.commit.author_name }}
-  - **Date:** {{ item.commit.date.strftime('%Y-%m-%d %H:%M:%S') }}
-  - **Commit:** `{{ item.commit.commit_hash }}`
+{% for category, results in categorized_commits.items() %}
+### {{ category }} ({{ results | length }} commit{{ 's' if (results | length) > 1 else '' }})
+{% for result in results %}
+- **{{ result.commit.commit_hash[:7] }}** by {{ result.commit.author_name }} on {{ result.commit.date_str }}: {{ result.summary }}
 {% endfor %}
 {% endfor %}

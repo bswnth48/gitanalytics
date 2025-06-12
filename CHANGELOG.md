@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced the AI prompt with detailed category descriptions to improve accuracy and summary quality.
   - The tool can now reliably categorize commits from any repository, regardless of commit message conventions.
 
+### Added
+- **Branch Selection:**
+  - Added a `--branch` option to the `analyze` command to allow analysis of any branch, not just the currently active one.
+  - The `GitAnalyzer` was enhanced to correctly identify commits unique to the specified branch.
+
 ## [0.2.0] - YYYY-MM-DD
 
 ### Added

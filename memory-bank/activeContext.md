@@ -1,19 +1,16 @@
-# Active Context: Implement Branch Selection
+# Active Context: Implement Smart Caching
 
 ## Current Focus
 
-Having successfully implemented a robust, AI-powered classification system, our next goal is to add **Branch Selection**. This will enhance the tool's flexibility by allowing users to analyze any branch in the repository, not just the currently checked-out one.
+Having implemented all core analysis features, our focus now shifts to performance and efficiency. The immediate goal is to implement **Smart Caching**. This will create a local cache of AI-generated summaries to avoid re-processing commits, which will significantly improve speed and solve the API rate-limiting issue we encountered.
 
 ## Recent Changes
 
-- Successfully implemented and tested "AI-Powered Classification".
-- Refined the AI prompt to include detailed category descriptions, resulting in more accurate classifications and more detailed summaries.
-- The tool can now intelligently categorize commits in any repository, regardless of whether it uses Conventional Commit standards.
-- Deprecated the old rule-based `thematic_analyzer.py`.
+- Successfully implemented and tested "Branch Selection", allowing the user to analyze any branch in the repository.
 
 ## Next Steps
 
-1.  **Enhance CLI:** Add a `--branch` option to the `analyze` command in `cli.py`.
-2.  **Enhance Git Analyzer:** Modify the `get_commits` method in `git_analyzer.py` to accept the new `branch` parameter and use it to iterate over the correct commits.
-3.  **Test:** Run the analysis on a specific branch to verify the new functionality works as expected.
-4.  **Update Documentation:** Update the `README.md` with instructions for the new `--branch` option.
+1.  **Create Cache Manager:** Implement a `CacheManager` class in `src/gitanalytics/cache_manager.py` with methods to load, save, and retrieve cached data from a local file.
+2.  **Integrate with AI Summarizer:** Modify `AISummarizer` to check the cache for a result before making an API call. If a result is found, use it; otherwise, make the API call and save the new result to the cache.
+3.  **Add CLI Option:** Introduce a `--no-cache` flag to the `analyze` command to allow users to bypass the cache and force a fresh analysis.
+4.  **Test:** Run the analysis twice on the same repository—once to populate the cache, and a second time to verify that it uses the cache and runs much faster.

@@ -1,10 +1,13 @@
 import openai
 import json
-from typing import List, Dict
+import os
+from typing import List, Dict, Any
 from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
 from .git_analyzer import Commit
 from .config import settings
+from .cache_manager import CacheManager
 
 # Initialize a Rich Console for beautiful output
 console = Console()
@@ -24,88 +27,130 @@ CATEGORIES = list(CATEGORIES_WITH_DESC.keys())
 
 class AISummarizer:
     """
-    Uses an AI model via OpenRouter to summarize commit messages.
+    Handles interaction with the AI model for summarization and classification.
     """
-    def __init__(self):
+    def __init__(self, cache_manager: CacheManager):
         """
-        Initializes the AISummarizer using settings from config.
+        Initializes the AISummarizer.
         """
-        if not settings.OPENROUTER_API_KEY or "your-key-goes-here" in settings.OPENROUTER_API_KEY:
-            raise ValueError("OpenRouter API key not found. Please create a .env file and set the OPENROUTER_API_KEY.")
-
         self.client = openai.OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.OPENROUTER_API_KEY,
         )
         self.model = settings.AI_MODEL
+        self.cache_manager = cache_manager
 
-    def summarize_and_classify_commits(self, commits: List[Commit]) -> List[Dict]:
-        """
-        Generates a detailed summary and an accurate classification for each commit.
-        """
-        if not commits:
-            return []
+        if not self.client.api_key:
+            raise ValueError("OPENROUTER_API_KEY environment variable not set.")
+        if not self.model:
+            raise ValueError("OPENROUTER_MODEL_NAME environment variable not set.")
 
-        console.print(f"\n[bold yellow]🤖 Generating summaries and classifications...[/bold yellow]")
+    def summarize_and_classify_commits(self, commits: List[Commit]) -> List[Dict[str, Any]]:
+        """
+        Generates a summary and classification for a list of commits.
+        It uses a cache to avoid re-processing commits.
+
+        Args:
+            commits: A list of Commit objects.
+
+        Returns:
+            A list of dictionaries, where each dictionary contains the commit hash,
+            category, summary, and original commit object.
+        """
+        cached_results = []
+        commits_to_process = []
+
+        for commit in commits:
+            cached = self.cache_manager.get(commit.commit_hash)
+            if cached:
+                cached_results.append(cached)
+            else:
+                commits_to_process.append(commit)
+
+        if cached_results:
+            console.print(f"Found {len(cached_results)} summaries in cache.")
+
+        if not commits_to_process:
+            return cached_results
+
+        console.print(f"🤖 Processing {len(commits_to_process)} commits with AI...")
 
         results = []
-        for commit in commits:
-            try:
-                max_diff_length = 4000
-                truncated_diff = commit.diff[:max_diff_length]
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            transient=True,
+        ) as progress:
+            task = progress.add_task("[cyan]Summarizing...", total=len(commits_to_process))
 
-                prompt = f"""
-                Analyze the git commit message and code diff below.
+            for commit in commits_to_process:
+                try:
+                    max_diff_length = 4000
+                    truncated_diff = commit.diff[:max_diff_length]
 
-                **Your Tasks:**
-                1.  **Summarize:** Write a detailed, one-sentence summary. The summary MUST explain the change's purpose and impact, focusing on WHAT was changed and WHY.
-                2.  **Classify:** Choose ONE category for the commit from the list provided.
+                    prompt = f"""
+                    Analyze the git commit message and code diff below.
 
-                **Category Definitions:**
-                {json.dumps(CATEGORIES_WITH_DESC, indent=2)}
+                    **Your Tasks:**
+                    1.  **Summarize:** Write a detailed, one-sentence summary. The summary MUST explain the change's purpose and impact, focusing on WHAT was changed and WHY.
+                    2.  **Classify:** Choose ONE category for the commit from the list provided.
 
-                **Output Format:**
-                You MUST respond with a single, valid JSON object with two keys: "summary" (string) and "category" (string).
+                    **Category Definitions:**
+                    {json.dumps(CATEGORIES_WITH_DESC, indent=2)}
 
-                **Commit Data:**
+                    **Output Format:**
+                    You MUST respond with a single, valid JSON object with two keys: "summary" (string) and "category" (string).
 
-                Commit Message:
-                ---
-                {commit.message}
-                ---
+                    **Commit Data:**
 
-                Code Diff:
-                ---
-                {truncated_diff}
-                ---
-                """
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    response_format={"type": "json_object"},
-                    messages=[
-                        {"role": "system", "content": "You are an expert software engineer who provides detailed, code-aware summaries and accurate classifications of git commits. You must respond with a valid JSON object."},
-                        {"role": "user", "content": prompt},
-                    ],
-                    temperature=0.1, # Reduced for more deterministic output
-                    max_tokens=250,  # Increased for potentially longer summaries
-                )
+                    Commit Message:
+                    ---
+                    {commit.message}
+                    ---
 
-                response_data = json.loads(response.choices[0].message.content)
-                summary = response_data.get("summary", "No summary provided.")
-                category = response_data.get("category", "Chores")
+                    Code Diff:
+                    ---
+                    {truncated_diff}
+                    ---
+                    """
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        response_format={"type": "json_object"},
+                        messages=[
+                            {"role": "system", "content": "You are an expert software engineer who provides detailed, code-aware summaries and accurate classifications of git commits. You must respond with a valid JSON object."},
+                            {"role": "user", "content": prompt},
+                        ],
+                        temperature=0.1, # Reduced for more deterministic output
+                        max_tokens=250,  # Increased for potentially longer summaries
+                    )
 
-                # Ensure the AI returns a valid category
-                if category not in CATEGORIES:
-                    category = "Chores" # Default to Chores if AI hallucinates a category
+                    response_data = json.loads(response.choices[0].message.content)
+                    summary = response_data.get("summary", "No summary provided.")
+                    category = response_data.get("category", "Chores")
 
-                results.append({'commit': commit, 'summary': summary, 'category': category})
+                    # Ensure the AI returns a valid category
+                    if category not in CATEGORIES:
+                        category = "Chores" # Default to Chores if AI hallucinates a category
 
-            except (openai.APIError, json.JSONDecodeError) as e:
-                console.print(f"[bold red]Error processing commit {commit.commit_hash[:7]}:[/] {e}")
-                results.append({'commit': commit, 'summary': 'Error processing commit.', 'category': 'Chores'})
+                    # Add original commit data to the result
+                    result_data = {
+                        "commit_hash": commit.commit_hash,
+                        "category": category,
+                        "summary": summary,
+                        "commit": commit.model_dump(mode='json')
+                    }
+                    results.append(result_data)
+                    self.cache_manager.set(commit.commit_hash, result_data)
 
-        console.print(f"   - [green]Processed {len(results)} commits.[/]")
-        return results
+                except (openai.APIError, json.JSONDecodeError) as e:
+                    console.print(f"[bold red]Error processing commit {commit.commit_hash[:7]}:[/] {e}")
+                    results.append({'commit': commit, 'summary': 'Error processing commit.', 'category': 'Chores'})
+
+                progress.update(task, advance=1)
+
+        console.print(f"   - Processed {len(commits_to_process)} commits.")
+        return cached_results + results
 
     def generate_executive_summary(self, commit_summaries: List[str]) -> str:
         """
