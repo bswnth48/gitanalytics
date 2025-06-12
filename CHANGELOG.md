@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Smart Caching:**
   - Implemented a caching system to store AI-generated summaries, dramatically improving performance for repeated analyses.
   - Added a `--no-cache` flag to bypass the cache.
+- **Cost Monitoring:**
+  - Integrated a cost monitor to track API token usage and provide an estimated cost for each analysis run.
 
 ### Fixed
 - **Date Handling in Reports:** Corrected a bug where dates from cached results were not being formatted correctly, causing report generation to fail.
@@ -64,3 +66,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented the main command group and `analyze` command in `src/gitanalytics/cli.py`.
 - **Project Initialization:**
   - Set up project structure with `uv` package manager and all documentation.
+
+# Progress: Git Analytics CLI
+
+## Current Status: Version 0.4.0 (Implementing Automated Tests)
+
+## What Works
+- **Complete Project Scaffolding**
+- **Basic CLI**
+- **Git Analyzer**
+- **AI Summarizer**
+- **AI Classifier**
+- **Branch Selection**
+- **Report Builder**
+- **Smart Caching**
+- **Cost Monitoring**
+
+## What's Left to Build
+### Production-Ready Features
+- **Automated Testing (`tests/`)**: A full `pytest` suite. *(In Progress)*
+
+## Known Issues
+- None at this time.

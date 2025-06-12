@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gitanalytics"
+version = "0.4.0"
+description = "AI-powered Git repository analytics tool"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Your Name", email = "you@example.com" }]
+
+dependencies = [
+    "click>=8.0",
+    "gitpython>=3.1",
+    "openai>=1.12",
+    "jinja2>=3.0",
+    "rich>=13.0",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0"
+]
+
+[project.scripts]
+gitanalytics = "gitanalytics.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=24.0",
+    "flake8>=7.0",
+    "mypy>=1.0",
+]

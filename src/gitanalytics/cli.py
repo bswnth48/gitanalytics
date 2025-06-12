@@ -1,4 +1,5 @@
 import click
+import sys
 from rich.console import Console
 from collections import defaultdict
 from .git_analyzer import GitAnalyzer
@@ -10,6 +11,58 @@ import git
 
 # Initialize a Rich Console for beautiful output
 console = Console()
+
+def run_analysis(repo_path, branch, start_date, end_date, output, no_cache):
+    """Core logic for the analysis, separated for clarity and testability."""
+    console.print(f"[bold green]🚀 Starting analysis for repository:[/] [cyan]{repo_path}[/]")
+    if branch:
+        console.print(f"   - [bold]Branch:[/] {branch}")
+    console.print(f"   - [bold]Date Range:[/] {start_date or 'First Commit'} to {end_date or 'Latest Commit'}")
+    console.print(f"   - [bold]Output Format:[/] {output}")
+
+    cache_manager = CacheManager(repo_path)
+    cost_monitor = CostMonitor()
+    if no_cache:
+        cache_manager.clear()
+        console.print("\n[yellow]Cache has been cleared for this run.[/yellow]")
+
+    analyzer = GitAnalyzer(repo_path)
+    commits = analyzer.get_commits(branch, start_date, end_date)
+
+    if not commits:
+        console.print("\n[yellow]No commits found for the specified criteria.[/yellow]")
+        sys.exit(0)
+
+    console.print(f"\n[bold green]✅ Found {len(commits)} commits.[/bold green]")
+
+    summarizer = AISummarizer(cache_manager, cost_monitor)
+    analysis_results = summarizer.summarize_and_classify_commits(commits)
+
+    if not analysis_results:
+        console.print("\n[yellow]Could not generate analysis. This may be due to an API error or empty commits.[/yellow]")
+        return
+
+    console.print("\n[bold yellow]📊 Categorizing results...[/bold yellow]")
+    categorized_commits = defaultdict(list)
+    for result in analysis_results:
+        categorized_commits[result['category']].append(result)
+
+    sorted_categorized_commits = dict(sorted(categorized_commits.items()))
+    console.print("   - [green]Categorization complete.[/]")
+
+    all_summaries = [result['summary'] for result in analysis_results]
+    executive_summary = summarizer.generate_executive_summary(all_summaries)
+
+    builder = ReportBuilder(repo_path, start_date, end_date)
+    if output == 'markdown':
+        report_file = builder.generate_markdown_report(sorted_categorized_commits, executive_summary)
+    else:
+        report_file = builder.generate_json_report(sorted_categorized_commits, executive_summary)
+
+    console.print(f"\n[bold green]✅ Report successfully generated![/bold green]")
+    console.print(f"   - [bold]File:[/] {report_file}")
+
+    cost_monitor.display_summary()
 
 @click.group()
 def main():
@@ -29,71 +82,21 @@ def analyze(repo_path, branch, start_date, end_date, output, no_cache):
     """
     Analyze a Git repository and generate a report.
     """
-    console.print(f"[bold green]🚀 Starting analysis for repository:[/] [cyan]{repo_path}[/]")
-    if branch:
-        console.print(f"   - [bold]Branch:[/] {branch}")
-    console.print(f"   - [bold]Date Range:[/] {start_date or 'First Commit'} to {end_date or 'Latest Commit'}")
-    console.print(f"   - [bold]Output Format:[/] {output}")
-
     try:
-        cache_manager = CacheManager(repo_path)
-        cost_monitor = CostMonitor()
-        if no_cache:
-            cache_manager.clear()
-            console.print("\n[yellow]Cache has been cleared for this run.[/yellow]")
-
-        analyzer = GitAnalyzer(repo_path)
-        commits = analyzer.get_commits(branch, start_date, end_date)
-
-        if not commits:
-            console.print("\n[yellow]No commits found for the specified criteria.[/yellow]")
-            return
-
-        console.print(f"\n[bold green]✅ Found {len(commits)} commits.[/bold green]")
-
-        summarizer = AISummarizer(cache_manager, cost_monitor)
-        analysis_results = summarizer.summarize_and_classify_commits(commits)
-
-        if not analysis_results:
-            console.print("\n[yellow]Could not generate analysis. This may be due to an API error or empty commits.[/yellow]")
-            return
-
-        console.print("\n[bold yellow]📊 Categorizing results...[/bold yellow]")
-        categorized_commits = defaultdict(list)
-        for result in analysis_results:
-            categorized_commits[result['category']].append(result)
-
-        # Sort for consistent order
-        sorted_categorized_commits = dict(sorted(categorized_commits.items()))
-        console.print("   - [green]Categorization complete.[/]")
-
-        # Extract just the summaries for the executive summary
-        all_summaries = [result['summary'] for result in analysis_results]
-        executive_summary = summarizer.generate_executive_summary(all_summaries)
-
-        builder = ReportBuilder(repo_path, start_date, end_date)
-
-        if output == 'markdown':
-            report_file = builder.generate_markdown_report(sorted_categorized_commits, executive_summary)
-        else:
-            report_file = builder.generate_json_report(sorted_categorized_commits, executive_summary)
-
-        console.print(f"\n[bold green]✅ Report successfully generated![/bold green]")
-        console.print(f"   - [bold]File:[/] {report_file}")
-
-        # Display cost summary at the end
-        cost_monitor.display_summary()
-
+        run_analysis(repo_path, branch, start_date, end_date, output, no_cache)
     except git.InvalidGitRepositoryError:
         console.print(f"\n[bold red]Error:[/] The path '{repo_path}' is not a valid Git repository.")
+        sys.exit(1)
     except git.exc.GitCommandError as e:
         console.print(f"\n[bold red]Git Error:[/] Could not find branch '{branch}'. Please ensure it exists.")
         console.print(f"   - [dim]{e}[/dim]")
+        sys.exit(1)
     except ValueError as e:
         console.print(f"\n[bold red]Configuration Error:[/] {e}")
+        sys.exit(1)
     except Exception as e:
         console.print(f"\n[bold red]An unexpected error occurred:[/] {e}")
-
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
