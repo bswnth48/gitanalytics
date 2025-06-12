@@ -8,13 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - YYYY-MM-DD
 
 ### Added
+- **Code-Aware Summaries:**
+  - Upgraded AI summarizer to analyze code diffs alongside commit messages, resulting in significantly more accurate and context-rich summaries.
+  - Enhanced `GitAnalyzer` to extract the code diff for each commit.
 - **Report Builder:**
   - Implemented `ReportBuilder` to generate analysis reports.
   - Added support for both Markdown (using a Jinja2 template) and JSON output formats.
   - Reports are saved to uniquely named files in the current directory.
 - **AI Summarizer:**
   - Implemented `AISummarizer` to generate summaries for commits via OpenRouter.
-  - Integrated into the CLI to display AI-generated results.
+  - Added a high-level executive summary for the entire analysis period.
 - **Configuration System:**
   - Added support for a `.env` file to manage API keys and model names securely.
 - **Git Analyzer:**

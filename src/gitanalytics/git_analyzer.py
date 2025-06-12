@@ -12,6 +12,7 @@ class Commit(BaseModel):
     author_email: str
     date: datetime
     message: str
+    diff: str
 
     class Config:
         arbitrary_types_allowed = True
@@ -58,12 +59,24 @@ class GitAnalyzer:
 
         commit_list = []
         for commit in commits_iter:
+            # Get the diff for the commit
+            try:
+                if commit.parents:
+                    # Diff against the first parent for simplicity
+                    diff_text = self.repo.git.diff(commit.parents[0].hexsha, commit.hexsha)
+                else:
+                    # This is the initial commit, diff against the empty tree
+                    diff_text = self.repo.git.show(commit.hexsha)
+            except Exception:
+                diff_text = "Could not retrieve diff."
+
             commit_data = {
                 'hexsha': commit.hexsha,
                 'author_name': commit.author.name,
                 'author_email': commit.author.email,
                 'date': commit.authored_datetime,
                 'message': commit.message.strip(),
+                'diff': diff_text
             }
             commit_list.append(Commit.model_validate(commit_data))
 

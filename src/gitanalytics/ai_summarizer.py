@@ -27,33 +27,43 @@ class AISummarizer:
 
     def summarize_commits(self, commits: List[Commit]) -> List[str]:
         """
-        Generates summaries for a list of commit messages.
+        Generates summaries for a list of commit messages and their diffs.
         """
         if not commits:
             return []
 
-        console.print(f"\n[bold yellow]🤖 Generating individual commit summaries...[/bold yellow]")
+        console.print(f"\n[bold yellow]🤖 Generating code-aware summaries...[/bold yellow]")
 
         summaries = []
         for commit in commits:
             try:
+                # Truncate diff to manage token count
+                max_diff_length = 4000
+                truncated_diff = commit.diff[:max_diff_length]
+
                 prompt = f"""
-                Analyze the following git commit and provide a concise, one-sentence summary of its purpose.
-                The summary should be suitable for a changelog.
+                As an expert software engineer, analyze the following git commit message and the accompanying code diff.
+                Provide a concise, one-sentence summary that explains the change's purpose and impact.
+                Focus on WHAT was changed and WHY, integrating insights from both the message and the code.
 
                 Commit Message:
                 ---
                 {commit.message}
                 ---
+
+                Code Diff:
+                ---
+                {truncated_diff}
+                ---
                 """
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=[
-                        {"role": "system", "content": "You are an expert software engineer who writes concise, insightful git commit summaries."},
+                        {"role": "system", "content": "You are an expert software engineer who provides concise, code-aware summaries of git commits."},
                         {"role": "user", "content": prompt},
                     ],
                     temperature=0.4,
-                    max_tokens=60,
+                    max_tokens=80, # Increased slightly for more detailed summaries
                 )
                 summary = response.choices[0].message.content.strip()
                 summaries.append(summary)
