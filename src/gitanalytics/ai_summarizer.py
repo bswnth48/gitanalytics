@@ -1,5 +1,6 @@
 import openai
-from typing import List
+import json
+from typing import List, Dict
 from rich.console import Console
 
 from .git_analyzer import Commit
@@ -7,6 +8,19 @@ from .config import settings
 
 # Initialize a Rich Console for beautiful output
 console = Console()
+
+# Define categories with descriptions to guide the AI
+CATEGORIES_WITH_DESC = {
+    "Features": "New user-facing features or major enhancements.",
+    "Bug Fixes": "Fixing a bug, crash, or an issue in the code.",
+    "Documentation": "Changes to README, guides, or code comments.",
+    "Code Refactoring": "Improving code structure without changing its external behavior.",
+    "Tests": "Adding or improving automated tests.",
+    "Build System": "Changes to build scripts, CI/CD, or dependencies.",
+    "Performance Improvements": "Code changes that specifically improve performance.",
+    "Chores": "Routine tasks, maintenance, setup, or other non-functional changes."
+}
+CATEGORIES = list(CATEGORIES_WITH_DESC.keys())
 
 class AISummarizer:
     """
@@ -25,26 +39,35 @@ class AISummarizer:
         )
         self.model = settings.AI_MODEL
 
-    def summarize_commits(self, commits: List[Commit]) -> List[str]:
+    def summarize_and_classify_commits(self, commits: List[Commit]) -> List[Dict]:
         """
-        Generates summaries for a list of commit messages and their diffs.
+        Generates a detailed summary and an accurate classification for each commit.
         """
         if not commits:
             return []
 
-        console.print(f"\n[bold yellow]🤖 Generating code-aware summaries...[/bold yellow]")
+        console.print(f"\n[bold yellow]🤖 Generating summaries and classifications...[/bold yellow]")
 
-        summaries = []
+        results = []
         for commit in commits:
             try:
-                # Truncate diff to manage token count
                 max_diff_length = 4000
                 truncated_diff = commit.diff[:max_diff_length]
 
                 prompt = f"""
-                As an expert software engineer, analyze the following git commit message and the accompanying code diff.
-                Provide a concise, one-sentence summary that explains the change's purpose and impact.
-                Focus on WHAT was changed and WHY, integrating insights from both the message and the code.
+                Analyze the git commit message and code diff below.
+
+                **Your Tasks:**
+                1.  **Summarize:** Write a detailed, one-sentence summary. The summary MUST explain the change's purpose and impact, focusing on WHAT was changed and WHY.
+                2.  **Classify:** Choose ONE category for the commit from the list provided.
+
+                **Category Definitions:**
+                {json.dumps(CATEGORIES_WITH_DESC, indent=2)}
+
+                **Output Format:**
+                You MUST respond with a single, valid JSON object with two keys: "summary" (string) and "category" (string).
+
+                **Commit Data:**
 
                 Commit Message:
                 ---
@@ -58,22 +81,31 @@ class AISummarizer:
                 """
                 response = self.client.chat.completions.create(
                     model=self.model,
+                    response_format={"type": "json_object"},
                     messages=[
-                        {"role": "system", "content": "You are an expert software engineer who provides concise, code-aware summaries of git commits."},
+                        {"role": "system", "content": "You are an expert software engineer who provides detailed, code-aware summaries and accurate classifications of git commits. You must respond with a valid JSON object."},
                         {"role": "user", "content": prompt},
                     ],
-                    temperature=0.4,
-                    max_tokens=80, # Increased slightly for more detailed summaries
+                    temperature=0.1, # Reduced for more deterministic output
+                    max_tokens=250,  # Increased for potentially longer summaries
                 )
-                summary = response.choices[0].message.content.strip()
-                summaries.append(summary)
-            except openai.APIError as e:
-                error_message = f"API error for commit {commit.commit_hash[:7]}: {e}"
-                console.print(f"[bold red]Error:[/] {error_message}")
-                summaries.append(f"Error summarizing commit.")
 
-        console.print(f"   - [green]Summarized {len(summaries)} commits.[/]")
-        return summaries
+                response_data = json.loads(response.choices[0].message.content)
+                summary = response_data.get("summary", "No summary provided.")
+                category = response_data.get("category", "Chores")
+
+                # Ensure the AI returns a valid category
+                if category not in CATEGORIES:
+                    category = "Chores" # Default to Chores if AI hallucinates a category
+
+                results.append({'commit': commit, 'summary': summary, 'category': category})
+
+            except (openai.APIError, json.JSONDecodeError) as e:
+                console.print(f"[bold red]Error processing commit {commit.commit_hash[:7]}:[/] {e}")
+                results.append({'commit': commit, 'summary': 'Error processing commit.', 'category': 'Chores'})
+
+        console.print(f"   - [green]Processed {len(results)} commits.[/]")
+        return results
 
     def generate_executive_summary(self, commit_summaries: List[str]) -> str:
         """
@@ -83,9 +115,8 @@ class AISummarizer:
 
         summaries_text = "\n".join(f"- {s}" for s in commit_summaries)
         prompt = f"""
-        Based on the following list of commit summaries from a development period, please provide a high-level,
-        three-sentence executive summary. This summary should capture the main themes of the work, such as new features,
-        major refactors, or significant bug fixes.
+        Based on the following list of commit summaries, please provide a high-level,
+        three-sentence executive summary.
 
         Commit Summaries:
         ---
@@ -99,7 +130,7 @@ class AISummarizer:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a CTO who provides high-level summaries of development progress for technical and non-technical stakeholders."},
+                    {"role": "system", "content": "You are a CTO who provides high-level summaries of development progress."},
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.6,
@@ -109,6 +140,5 @@ class AISummarizer:
             console.print("   - [green]Executive summary created.[/]")
             return executive_summary
         except openai.APIError as e:
-            error_message = f"API error during executive summary generation: {e}"
-            console.print(f"[bold red]Error:[/] {error_message}")
+            console.print(f"[bold red]Error during executive summary generation:[/] {e}")
             return "Could not generate executive summary due to an API error."

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - YYYY-MM-DD
+
+### Changed
+- **Upgraded Thematic Analysis to AI-Powered Classification:**
+  - Replaced the rule-based thematic analyzer with a more robust, single-call AI classification system.
+  - Enhanced the AI prompt with detailed category descriptions to improve accuracy and summary quality.
+  - The tool can now reliably categorize commits from any repository, regardless of commit message conventions.
+
 ## [0.2.0] - YYYY-MM-DD
 
 ### Added

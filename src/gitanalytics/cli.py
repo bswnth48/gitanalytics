@@ -1,9 +1,9 @@
 import click
 from rich.console import Console
+from collections import defaultdict
 from .git_analyzer import GitAnalyzer
 from .ai_summarizer import AISummarizer
 from .report_builder import ReportBuilder
-from .thematic_analyzer import analyze_themes
 import git
 
 # Initialize a Rich Console for beautiful output
@@ -40,21 +40,27 @@ def analyze(repo_path, start_date, end_date, output):
         console.print(f"\n[bold green]✅ Found {len(commits)} commits.[/bold green]")
 
         summarizer = AISummarizer()
-        summaries = summarizer.summarize_commits(commits)
+        analysis_results = summarizer.summarize_and_classify_commits(commits)
 
-        console.print("\n[bold yellow]📊 Analyzing themes...[/bold yellow]")
-        commits_with_summaries = list(zip(commits, summaries))
-        categorized_commits = analyze_themes(commits_with_summaries)
-        console.print("   - [green]Thematic analysis complete.[/]")
+        console.print("\n[bold yellow]📊 Categorizing results...[/bold yellow]")
+        categorized_commits = defaultdict(list)
+        for result in analysis_results:
+            categorized_commits[result['category']].append(result)
 
-        executive_summary = summarizer.generate_executive_summary(summaries)
+        # Sort for consistent order
+        sorted_categorized_commits = dict(sorted(categorized_commits.items()))
+        console.print("   - [green]Categorization complete.[/]")
+
+        # Extract just the summaries for the executive summary
+        all_summaries = [result['summary'] for result in analysis_results]
+        executive_summary = summarizer.generate_executive_summary(all_summaries)
 
         builder = ReportBuilder(repo_path, start_date, end_date)
 
         if output == 'markdown':
-            report_file = builder.generate_markdown_report(categorized_commits, executive_summary)
-        else: # output == 'json'
-            report_file = builder.generate_json_report(categorized_commits, executive_summary)
+            report_file = builder.generate_markdown_report(sorted_categorized_commits, executive_summary)
+        else:
+            report_file = builder.generate_json_report(sorted_categorized_commits, executive_summary)
 
         console.print(f"\n[bold green]✅ Report successfully generated![/bold green]")
         console.print(f"   - [bold]File:[/] {report_file}")
