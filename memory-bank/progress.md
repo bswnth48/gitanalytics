@@ -1,8 +1,8 @@
 # Progress: Git Analytics CLI
 
-## Current Status: Version 0.1.0 (Implementing Advanced Analytics)
+## Current Status: Version 0.2.0 (Productivity Features Complete)
 
-The core MVP is stable. Development is now focused on adding advanced analytical features to enhance the tool's productivity.
+All planned productivity features have been implemented. The tool is now highly capable of generating intelligent, structured, and insightful reports from any Git repository that follows Conventional Commits.
 
 ## What Works
 
@@ -13,19 +13,17 @@ The core MVP is stable. Development is now focused on adding advanced analytical
   - Integrates with OpenRouter and manages settings via a `.env` file.
   - Generates code-aware summaries for individual commits.
   - Generates a high-level executive summary for the entire analysis period.
-- **Report Builder:** Generates and saves clean reports in both Markdown and JSON format.
+- **Thematic Analyzer:** Automatically categorizes commits based on Conventional Commit prefixes.
+- **Report Builder:** Generates and saves themed reports in both Markdown and JSON format.
 
 ## What's Left to Build
-
-### Productivity & Analysis Features
-1.  **High-Level Executive Summary:** An AI-generated overview of the entire analysis period. *(Done)*
-2.  **Code-Aware Summaries:** Analyze the code diffs for each commit. *(Done)*
-3.  **Thematic Analysis:** Automatically group commits by type (e.g., `feat`, `fix`). *(In Progress)*
 
 ### Production-Ready Features
 -   **Smart Caching (`cache_manager.py`)**: To avoid re-processing commits.
 -   **Cost Monitoring (`cost_monitor.py`)**: To track API usage and costs.
 -   **Automated Testing (`tests/`)**: A full `pytest` suite.
+-   **AI-Powered Classification**: For repositories that don't use Conventional Commits.
+-   **Branch Selection**: An option to analyze branches other than the current `HEAD`.
 
 ## Known Issues
 

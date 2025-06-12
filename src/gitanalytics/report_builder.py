@@ -27,21 +27,18 @@ class ReportBuilder:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         return f"git_analytics_report_{timestamp}.{extension}"
 
-    def generate_markdown_report(self, commits: List[Commit], summaries: List[str], executive_summary: str) -> str:
+    def generate_markdown_report(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str) -> str:
         """
-        Generates a Markdown report from the data.
+        Generates a Markdown report from categorized data.
         """
         template = self.env.get_template('report.md.j2')
-
-        analysis_results = [{'commit': commit, 'summary': summary} for commit, summary in zip(commits, summaries)]
 
         rendered_report = template.render(
             repo_path=self.repo_path,
             start_date=self.start_date,
             end_date=self.end_date,
             generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            commits=commits,
-            analysis_results=analysis_results,
+            categorized_commits=categorized_commits,
             executive_summary=executive_summary
         )
 
@@ -50,19 +47,25 @@ class ReportBuilder:
             f.write(rendered_report)
         return filename
 
-    def generate_json_report(self, commits: List[Commit], summaries: List[str], executive_summary: str) -> str:
+    def generate_json_report(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str) -> str:
         """
-        Generates a JSON report from the data.
+        Generates a JSON report from categorized data.
         """
-        analysis_results = []
-        for commit, summary in zip(commits, summaries):
-            analysis_results.append({
-                'commit_hash': commit.commit_hash,
-                'author': commit.author_name,
-                'date': commit.date.isoformat(),
-                'message': commit.message,
-                'summary': summary
-            })
+        # Flatten the categorized structure for the JSON report for easier parsing
+        flat_results = []
+        total_commits = 0
+        for category, items in categorized_commits.items():
+            total_commits += len(items)
+            for item in items:
+                commit = item['commit']
+                flat_results.append({
+                    'category': category,
+                    'commit_hash': commit.commit_hash,
+                    'author': commit.author_name,
+                    'date': commit.date.isoformat(),
+                    'message': commit.message,
+                    'summary': item['summary']
+                })
 
         report_data = {
             'report_metadata': {
@@ -70,10 +73,10 @@ class ReportBuilder:
                 'start_date': self.start_date,
                 'end_date': self.end_date,
                 'generated_at': datetime.now().isoformat(),
-                'commit_count': len(commits)
+                'commit_count': total_commits
             },
             'executive_summary': executive_summary,
-            'analysis_results': analysis_results
+            'analysis_results': flat_results
         }
 
         filename = self._generate_report_filename("json")

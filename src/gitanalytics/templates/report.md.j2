@@ -12,11 +12,15 @@
 
 ---
 
-## Commits ({{ commits|length }})
+## Thematic Analysis
 
-{% for item in analysis_results %}
-### {{ item.summary }}
-- **Author:** {{ item.commit.author_name }}
-- **Date:** {{ item.commit.date.strftime('%Y-%m-%d %H:%M:%S') }}
-- **Commit:** `{{ item.commit.commit_hash }}`
+{% for category, items in categorized_commits.items() %}
+### {{ category }} ({{ items|length }})
+
+{% for item in items %}
+- **{{ item.summary }}**
+  - **Author:** {{ item.commit.author_name }}
+  - **Date:** {{ item.commit.date.strftime('%Y-%m-%d %H:%M:%S') }}
+  - **Commit:** `{{ item.commit.commit_hash }}`
+{% endfor %}
 {% endfor %}
