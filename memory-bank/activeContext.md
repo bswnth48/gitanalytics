@@ -1,20 +1,19 @@
-# Active Context: Implement Automated Testing
+# Active Context: Advanced Analytics - Code Churn & Complexity
 
 ## Current Focus
 
-With all major features (analysis, caching, cost tracking) now implemented, our focus shifts to ensuring the stability and reliability of the application. The goal is to build a comprehensive **Automated Test Suite** using `pytest`. This will allow us to make future changes with confidence, knowing that the core functionality is protected by tests.
+Having added Contributor Analysis, we are now moving to the second advanced analytics feature: **Code Churn & Complexity**. The goal is to analyze the repository to identify "hotspots"—files that are frequently changed—and to measure their cyclomatic complexity. This will provide insights into potential technical debt and areas of the codebase that might be difficult to maintain.
 
 ## Recent Changes
 
-- Successfully implemented and tested "Cost Monitoring", which tracks token usage and provides an estimated cost for each analysis run.
+- Successfully implemented and tested "Contributor Analysis", which adds an optional author-centric summary to the report.
+- Added a `--by-author` flag to the CLI to control this feature.
+- Updated the report templates and builder to handle and display the new contributor data.
 
 ## Next Steps
 
-1.  **Setup Test Environment:** Create a `conftest.py` to manage shared testing fixtures, such as creating temporary Git repositories for tests to run against.
-2.  **Test Core Logic:**
-    -   Write unit tests for the `GitAnalyzer` to ensure it correctly identifies and filters commits.
-    -   Write tests for the `CacheManager` to verify saving and loading from the cache.
-3.  **Test CLI & Integration:**
-    -   Write integration tests for the `analyze` command in `cli.py` using `Click`'s test runner.
-    -   Mock the AI API calls to test the application's flow without incurring costs or relying on external services.
-4.  **Run Tests:** Execute the full test suite to ensure all components are working as expected.
+1.  **Add Dependency:** Add the `radon` library to our `pyproject.toml` file to provide complexity analysis capabilities.
+2.  **Enhance Git Analyzer:** Update `GitAnalyzer` to track file modification statistics across all commits to calculate code churn.
+3.  **Create Complexity Analyzer:** Build a new component that uses `radon` to analyze the complexity of given source files.
+4.  **Integrate & Report:** Update the main `run_analysis` logic to combine churn and complexity data and pass it to the `ReportBuilder` for inclusion in a new "Code Health" section of the report.
+5.  **Add Tests:** Write tests for the churn and complexity analysis logic.

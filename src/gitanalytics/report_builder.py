@@ -1,8 +1,9 @@
 import json
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from jinja2 import Environment, FileSystemLoader
 import os
+from pathlib import Path
 
 from .git_analyzer import Commit
 
@@ -36,7 +37,7 @@ class ReportBuilder:
             return date_obj.strftime('%Y-%m-%d %H:%M:%S')
         return "Unknown Date"
 
-    def _prepare_context(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str) -> Dict:
+    def _prepare_context(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str, author_summary: Optional[Dict] = None) -> Dict:
         """Prepares the context dictionary for rendering templates."""
         # Process commits to ensure dates are strings for the template
         for category, results in categorized_commits.items():
@@ -51,16 +52,16 @@ class ReportBuilder:
             "end_date": self.end_date,
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "categorized_commits": categorized_commits,
-            "executive_summary": executive_summary
+            "executive_summary": executive_summary,
+            "author_summary": author_summary
         }
 
-    def generate_markdown_report(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str) -> str:
+    def generate_markdown_report(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str, author_summary: Optional[Dict] = None) -> str:
         """
-        Generates a Markdown report from categorized data.
+        Generates a Markdown report from the analyzed data.
         """
+        context = self._prepare_context(categorized_commits, executive_summary, author_summary)
         template = self.env.get_template('report.md.j2')
-
-        context = self._prepare_context(categorized_commits, executive_summary)
         rendered_report = template.render(context)
 
         filename = self._generate_report_filename("md")
@@ -68,39 +69,28 @@ class ReportBuilder:
             f.write(rendered_report)
         return filename
 
-    def generate_json_report(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str) -> str:
+    def generate_json_report(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str, author_summary: Optional[Dict] = None) -> str:
         """
-        Generates a JSON report from categorized data.
+        Generates a JSON report from the analyzed data.
         """
-        # Flatten the categorized structure for the JSON report for easier parsing
-        flat_results = []
-        total_commits = 0
-        for category, items in categorized_commits.items():
-            total_commits += len(items)
-            for item in items:
-                commit = item['commit']
-                flat_results.append({
-                    'category': category,
-                    'commit_hash': commit.commit_hash,
-                    'author': commit.author_name,
-                    'date': commit.date.isoformat(),
-                    'message': commit.message,
-                    'summary': item['summary']
-                })
+        context = self._prepare_context(categorized_commits, executive_summary, author_summary)
+        # We need to handle non-serializable objects for JSON output
+        # For now, let's just dump the prepared context
+        # A more robust solution might involve custom JSON encoders for Pydantic models
 
-        report_data = {
-            'report_metadata': {
-                'repo_path': self.repo_path,
-                'start_date': self.start_date,
-                'end_date': self.end_date,
-                'generated_at': datetime.now().isoformat(),
-                'commit_count': total_commits
-            },
-            'executive_summary': executive_summary,
-            'analysis_results': flat_results
-        }
+        # A quick way to make it serializable
+        def make_serializable(o):
+            if isinstance(o, (datetime, Path)):
+                return str(o)
+            if isinstance(o, dict):
+                return {k: make_serializable(v) for k, v in o.items()}
+            if isinstance(o, list):
+                return [make_serializable(i) for i in o]
+            return o
+
+        serializable_context = make_serializable(context)
 
         filename = self._generate_report_filename("json")
         with open(filename, "w") as f:
-            json.dump(report_data, f, indent=2)
+            json.dump(serializable_context, f, indent=4)
         return filename

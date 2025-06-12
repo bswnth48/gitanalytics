@@ -12,7 +12,7 @@ import git
 # Initialize a Rich Console for beautiful output
 console = Console()
 
-def run_analysis(repo_path, branch, start_date, end_date, output, no_cache):
+def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author):
     """Core logic for the analysis, separated for clarity and testability."""
     console.print(f"[bold green]🚀 Starting analysis for repository:[/] [cyan]{repo_path}[/]")
     if branch:
@@ -53,11 +53,21 @@ def run_analysis(repo_path, branch, start_date, end_date, output, no_cache):
     all_summaries = [result['summary'] for result in analysis_results]
     executive_summary = summarizer.generate_executive_summary(all_summaries)
 
+    author_summary = None
+    if by_author:
+        console.print("\n[bold yellow]📊 Generating contributor summary...[/bold yellow]")
+        author_summary = defaultdict(lambda: defaultdict(int))
+        for result in analysis_results:
+            author = result['commit']['author_name']
+            category = result['category']
+            author_summary[author][category] += 1
+        console.print("   - [green]Contributor summary complete.[/]")
+
     builder = ReportBuilder(repo_path, start_date, end_date)
     if output == 'markdown':
-        report_file = builder.generate_markdown_report(sorted_categorized_commits, executive_summary)
+        report_file = builder.generate_markdown_report(sorted_categorized_commits, executive_summary, author_summary)
     else:
-        report_file = builder.generate_json_report(sorted_categorized_commits, executive_summary)
+        report_file = builder.generate_json_report(sorted_categorized_commits, executive_summary, author_summary)
 
     console.print(f"\n[bold green]✅ Report successfully generated![/bold green]")
     console.print(f"   - [bold]File:[/] {report_file}")
@@ -78,12 +88,13 @@ def main():
 @click.option('--end-date', help='End date for commit analysis (YYYY-MM-DD).')
 @click.option('--output', type=click.Choice(['markdown', 'json'], case_sensitive=False), default='markdown', help='Output format.')
 @click.option('--no-cache', is_flag=True, help='Disable caching for this run.')
-def analyze(repo_path, branch, start_date, end_date, output, no_cache):
+@click.option('--by-author', is_flag=True, help='Include a contributor summary section in the report.')
+def analyze(repo_path, branch, start_date, end_date, output, no_cache, by_author):
     """
     Analyze a Git repository and generate a report.
     """
     try:
-        run_analysis(repo_path, branch, start_date, end_date, output, no_cache)
+        run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author)
     except git.InvalidGitRepositoryError:
         console.print(f"\n[bold red]Error:[/] The path '{repo_path}' is not a valid Git repository.")
         sys.exit(1)

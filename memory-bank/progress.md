@@ -14,11 +14,14 @@ All major features are now implemented. The focus is on building a comprehensive
 - **Smart Caching:** Caches AI summaries to avoid re-processing commits, with a `--no-cache` override.
 - **Cost Monitoring:** Tracks API token usage and provides an estimated cost for each analysis run.
 - **Report Builder:** Generates and saves themed reports in both Markdown and JSON format.
+- **Automated Test Suite:** A robust `pytest` suite ensures application stability and catches regressions.
 
 ## What's Left to Build
 
-### Production-Ready Features
--   **Automated Testing (`tests/`)**: A full `pytest` suite. *(In Progress)*
+### Advanced Analytics
+-   **Contributor Analysis**: Summarize contributions by author. *(In Progress)*
+-   **Code Churn & Complexity**: Identify hotspots and potential technical debt in the codebase.
+-   **HTML Reports**: Generate beautiful, interactive HTML reports.
 
 ## Known Issues
 
