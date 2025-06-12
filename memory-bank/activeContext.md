@@ -1,16 +1,18 @@
-# Active Context: Implement Smart Caching
+# Active Context: Implement Cost Monitoring
 
 ## Current Focus
 
-Having implemented all core analysis features, our focus now shifts to performance and efficiency. The immediate goal is to implement **Smart Caching**. This will create a local cache of AI-generated summaries to avoid re-processing commits, which will significantly improve speed and solve the API rate-limiting issue we encountered.
+With performance and efficiency improved by caching, our new focus is on providing visibility into the operational costs of the tool. The goal is to implement a **Cost Monitor** that tracks API token usage and provides an estimated cost for each analysis run.
 
 ## Recent Changes
 
-- Successfully implemented and tested "Branch Selection", allowing the user to analyze any branch in the repository.
+- Successfully implemented and tested "Smart Caching", which drastically reduces API calls and improves performance on repeated analyses.
+- Added a `--no-cache` flag for control over caching behavior.
+- Fixed a bug related to date formatting when loading results from the cache.
 
 ## Next Steps
 
-1.  **Create Cache Manager:** Implement a `CacheManager` class in `src/gitanalytics/cache_manager.py` with methods to load, save, and retrieve cached data from a local file.
-2.  **Integrate with AI Summarizer:** Modify `AISummarizer` to check the cache for a result before making an API call. If a result is found, use it; otherwise, make the API call and save the new result to the cache.
-3.  **Add CLI Option:** Introduce a `--no-cache` flag to the `analyze` command to allow users to bypass the cache and force a fresh analysis.
-4.  **Test:** Run the analysis twice on the same repository—once to populate the cache, and a second time to verify that it uses the cache and runs much faster.
+1.  **Create Cost Monitor:** Implement a `CostMonitor` class in `src/gitanalytics/cost_monitor.py`. This class will hold pricing information for various AI models and track token usage.
+2.  **Integrate with AI Summarizer:** Modify `AISummarizer` to track the token usage from each API call (both for summaries and the executive summary) via the `CostMonitor`.
+3.  **Integrate with CLI:** Update the `analyze` command in `cli.py` to instantiate the `CostMonitor`, pass it to the summarizer, and display a cost summary at the end of the analysis.
+4.  **Test:** Run an analysis with `--no-cache` to ensure API calls are made and that the cost calculation is displayed correctly.

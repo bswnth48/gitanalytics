@@ -5,6 +5,7 @@ from .git_analyzer import GitAnalyzer
 from .ai_summarizer import AISummarizer
 from .report_builder import ReportBuilder
 from .cache_manager import CacheManager
+from .cost_monitor import CostMonitor
 import git
 
 # Initialize a Rich Console for beautiful output
@@ -36,6 +37,7 @@ def analyze(repo_path, branch, start_date, end_date, output, no_cache):
 
     try:
         cache_manager = CacheManager(repo_path)
+        cost_monitor = CostMonitor()
         if no_cache:
             cache_manager.clear()
             console.print("\n[yellow]Cache has been cleared for this run.[/yellow]")
@@ -49,7 +51,7 @@ def analyze(repo_path, branch, start_date, end_date, output, no_cache):
 
         console.print(f"\n[bold green]✅ Found {len(commits)} commits.[/bold green]")
 
-        summarizer = AISummarizer(cache_manager)
+        summarizer = AISummarizer(cache_manager, cost_monitor)
         analysis_results = summarizer.summarize_and_classify_commits(commits)
 
         if not analysis_results:
@@ -78,6 +80,9 @@ def analyze(repo_path, branch, start_date, end_date, output, no_cache):
 
         console.print(f"\n[bold green]✅ Report successfully generated![/bold green]")
         console.print(f"   - [bold]File:[/] {report_file}")
+
+        # Display cost summary at the end
+        cost_monitor.display_summary()
 
     except git.InvalidGitRepositoryError:
         console.print(f"\n[bold red]Error:[/] The path '{repo_path}' is not a valid Git repository.")

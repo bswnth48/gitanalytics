@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Branch Selection:**
   - Added a `--branch` option to the `analyze` command to allow analysis of any branch, not just the currently active one.
   - The `GitAnalyzer` was enhanced to correctly identify commits unique to the specified branch.
+- **Smart Caching:**
+  - Implemented a caching system to store AI-generated summaries, dramatically improving performance for repeated analyses.
+  - Added a `--no-cache` flag to bypass the cache.
+
+### Fixed
+- **Date Handling in Reports:** Corrected a bug where dates from cached results were not being formatted correctly, causing report generation to fail.
 
 ## [0.2.0] - YYYY-MM-DD
 

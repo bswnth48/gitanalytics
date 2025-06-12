@@ -8,6 +8,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 from .git_analyzer import Commit
 from .config import settings
 from .cache_manager import CacheManager
+from .cost_monitor import CostMonitor
 
 # Initialize a Rich Console for beautiful output
 console = Console()
@@ -29,7 +30,7 @@ class AISummarizer:
     """
     Handles interaction with the AI model for summarization and classification.
     """
-    def __init__(self, cache_manager: CacheManager):
+    def __init__(self, cache_manager: CacheManager, cost_monitor: CostMonitor):
         """
         Initializes the AISummarizer.
         """
@@ -39,6 +40,7 @@ class AISummarizer:
         )
         self.model = settings.AI_MODEL
         self.cache_manager = cache_manager
+        self.cost_monitor = cost_monitor
 
         if not self.client.api_key:
             raise ValueError("OPENROUTER_API_KEY environment variable not set.")
@@ -124,6 +126,7 @@ class AISummarizer:
                         temperature=0.1, # Reduced for more deterministic output
                         max_tokens=250,  # Increased for potentially longer summaries
                     )
+                    self.cost_monitor.track_usage(self.model, response.usage)
 
                     response_data = json.loads(response.choices[0].message.content)
                     summary = response_data.get("summary", "No summary provided.")
@@ -181,6 +184,7 @@ class AISummarizer:
                 temperature=0.6,
                 max_tokens=200,
             )
+            self.cost_monitor.track_usage(self.model, response.usage)
             executive_summary = response.choices[0].message.content.strip()
             console.print("   - [green]Executive summary created.[/]")
             return executive_summary

@@ -15,13 +15,13 @@ All planned productivity features, including a robust AI-powered classification 
   - Generates a high-level executive summary for the entire analysis period.
 - **AI Classifier:** Intelligently categorizes any commit into a theme (e.g., Features, Fixes) using an AI-powered, single-call approach.
 - **Thematic Analyzer:** Automatically categorizes commits based on Conventional Commit prefixes.
-- **Report Builder:** Generates and saves themed reports in both Markdown and JSON format.
 - **Branch Selection:** An option to analyze branches other than the current `HEAD`.
+- **Report Builder:** Generates and saves themed reports in both Markdown and JSON format.
 
 ## What's Left to Build
 
 ### Production-Ready Features
--   **Smart Caching (`cache_manager.py`)**: To avoid re-processing commits. *(In Progress)*
+-   **Smart Caching (`cache_manager.py`)**: Caches AI summaries to avoid re-processing commits, with a `--no-cache` override.
 -   **Cost Monitoring (`cost_monitor.py`)**: To track API usage and costs.
 -   **Automated Testing (`tests/`)**: A full `pytest` suite.
 
