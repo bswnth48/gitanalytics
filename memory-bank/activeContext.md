@@ -1,19 +1,19 @@
 # Active Context: Advanced Analytics - Code Churn & Complexity
 
 ## Current Focus
+**Planning Next Phase (Advanced Features)**
 
-Having added Contributor Analysis, we are now moving to the second advanced analytics feature: **Code Churn & Complexity**. The goal is to analyze the repository to identify "hotspots"—files that are frequently changed—and to measure their cyclomatic complexity. This will provide insights into potential technical debt and areas of the codebase that might be difficult to maintain.
+With the successful implementation of Code Churn & Complexity analysis, all planned "production-ready" features are now complete. The tool is robust, well-tested, and provides deep insights into a repository's history, health, and contributors. We are now in a planning phase to determine the next major direction for the project.
 
 ## Recent Changes
-
-- Successfully implemented and tested "Contributor Analysis", which adds an optional author-centric summary to the report.
-- Added a `--by-author` flag to the CLI to control this feature.
-- Updated the report templates and builder to handle and display the new contributor data.
+- **Code Churn & Complexity Analysis**: Integrated `radon` to calculate cyclomatic complexity and combined it with commit frequency (churn) to generate a "Code Health Summary". This helps identify potential technical debt and high-risk components.
+- **Contributor Analysis**: Added a `--by-author` flag to generate reports summarizing contributions by each author, providing insights into team dynamics and individual impact.
+- **Automated Testing**: Built a comprehensive test suite using `pytest`, ensuring stability and correctness across all features. Tests cover the CLI, git analysis, complexity calculations, and more.
 
 ## Next Steps
-
-1.  **Add Dependency:** Add the `radon` library to our `pyproject.toml` file to provide complexity analysis capabilities.
-2.  **Enhance Git Analyzer:** Update `GitAnalyzer` to track file modification statistics across all commits to calculate code churn.
-3.  **Create Complexity Analyzer:** Build a new component that uses `radon` to analyze the complexity of given source files.
-4.  **Integrate & Report:** Update the main `run_analysis` logic to combine churn and complexity data and pass it to the `ReportBuilder` for inclusion in a new "Code Health" section of the report.
-5.  **Add Tests:** Write tests for the churn and complexity analysis logic.
+1.  **Finalize Documentation**: Review and update all documentation (`README.md`, `CHANGELOG.md`, etc.) to reflect the new features and create a stable `v0.3.0` release.
+2.  **Explore Advanced Analytics**:
+    - **Historical Trend Analysis**: Could we track complexity and churn over time to visualize trends?
+    - **CI/CD Integration**: How can this tool be integrated into a CI/CD pipeline to provide automated reports on pull requests?
+    - **Interactive Reports**: Could we generate HTML reports with interactive charts and graphs?
+3.  **Prioritize next feature set** based on user feedback and project goals.

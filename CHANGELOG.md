@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] - YYYY-MM-DD
 
+### Added
+- **Code Health Analysis**: New `--code-health` flag to generate a "Code Health Summary" in reports. This section identifies high-churn files and analyzes their cyclomatic complexity to help pinpoint potential technical debt.
+- **Contributor Analysis**: New `--by-author` flag to generate reports summarizing contributions by each author.
+- **Automated Test Suite**: A comprehensive `pytest` suite was added to ensure stability and prevent regressions.
+
 ### Changed
+- The default analysis now includes AI-powered classification, removing the dependency on Conventional Commits for thematic grouping.
+- Performance improvements through a more robust caching system.
 - **Upgraded Thematic Analysis to AI-Powered Classification:**
   - Replaced the rule-based thematic analyzer with a more robust, single-call AI classification system.
   - Enhanced the AI prompt with detailed category descriptions to improve accuracy and summary quality.

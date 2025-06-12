@@ -13,6 +13,8 @@
 -   **🤖 AI-Powered Summaries:** Uses advanced AI models to generate detailed, code-aware summaries for each commit.
 -   **🧩 Thematic Analysis:** Automatically categorizes commits into themes like `Features`, `Bug Fixes`, `Documentation`, and `Refactoring`.
 -   **📄 Executive Summaries:** Generates a high-level, multi-sentence summary of the entire analysis period, perfect for reports and stakeholder updates.
+-   **📊 Contributor Analysis:** Generate reports summarizing work by author to see who is contributing what.
+-   **🩺 Code Health Insights:** Identify high-churn files and analyze their complexity to flag potential technical debt.
 -   **🌿 Branch Selection:** Analyze any branch in your repository, not just the one you have checked out, using the `--branch` option.
 -   **⚡️ Smart Caching:** Caches results to provide near-instantaneous reports on subsequent runs and to minimize API calls.
 -   **💰 Cost Monitoring:** Tracks API token usage and provides an estimated cost for each analysis run, giving you full visibility.
@@ -94,6 +96,16 @@ gitanalytics analyze [OPTIONS] [REPO_PATH]
 -   **Force a fresh analysis by ignoring the cache:**
     ```bash
     gitanalytics analyze --no-cache
+    ```
+
+-   **Generate a report summarized by author:**
+    ```bash
+    gitanalytics analyze --by-author
+    ```
+
+-   **Include a code health summary in the report:**
+    ```bash
+    gitanalytics analyze --code-health
     ```
 
 ## Development
