@@ -21,6 +21,7 @@ The tool now has a solid foundation with all core features implemented and teste
 - **All tests passing (except known xfail for sys.exit(0))**
 - **CLI/test compatibility improvements**
 - **Robust CLI Experience**: Fixed a regression where only one analysis type would run at a time. All analyses (Thematic, Code Health, Contributor, Trend) now run by default, providing a complete report with a single command. The CLI flags have been updated to be more intuitive (e.g., `--no-code-health` to disable a specific analysis).
+- **Language-Aware Security Analysis**: The tool now automatically detects the project's language and runs a security scan using the appropriate tool. The initial implementation supports Python using `bandit` and is designed to be easily extendable to other languages.
 
 ## What's Left to Build
 
