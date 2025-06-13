@@ -2,6 +2,7 @@ import click
 import sys
 from rich.console import Console
 from collections import defaultdict
+from datetime import datetime
 from .git_analyzer import GitAnalyzer
 from .ai_summarizer import AISummarizer
 from .report_builder import ReportBuilder
@@ -13,7 +14,7 @@ import git
 # Initialize a Rich Console for beautiful output
 console = Console()
 
-def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author, code_health):
+def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author, code_health, trend_analysis, baseline_name):
     """Core logic for the analysis, separated for clarity and testability."""
     console.print(f"[bold green]🚀 Starting analysis for repository:[/] [cyan]{repo_path}[/]")
     if branch:
@@ -27,7 +28,32 @@ def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_a
         cache_manager.clear()
         console.print("\n[yellow]Cache has been cleared for this run.[/yellow]")
 
-    analyzer = GitAnalyzer(repo_path)
+    try:
+        analyzer = GitAnalyzer(repo_path)
+    except (git.exc.InvalidGitRepositoryError, git.exc.NoSuchPathError):
+        console.print(f"[bold red]Error: {repo_path} is not a valid Git repository.[/]")
+        sys.exit(1)
+
+    # --- Historical Trend Analysis ---
+    trend_data = None
+    baseline_comparison = None
+    if trend_analysis:
+        console.print("\n[bold yellow]📈 Analyzing historical trends...[/bold yellow]")
+
+        # Collect current metrics
+        current_metrics = analyzer.collect_historical_metrics(branch)
+
+        # Get trend analysis
+        trend_data = analyzer.historical_metrics.get_trend_analysis(
+            start_date=datetime.fromisoformat(start_date) if start_date else None,
+            end_date=datetime.fromisoformat(end_date) if end_date else None
+        )
+
+        # Get baseline comparison if specified
+        if baseline_name:
+            baseline_comparison = analyzer.historical_metrics.compare_with_baseline(baseline_name)
+
+        console.print("   - [green]Historical trend analysis complete.[/]")
 
     # --- Code Health Analysis ---
     code_health_summary = None
@@ -46,10 +72,12 @@ def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_a
             # Combine churn and complexity data
             code_health_summary = []
             for file_path, churn_count in top_churn_files:
+                # The complexity_data for a file now contains the detailed structure
+                file_complexity_data = complexity_data.get(file_path, {"average_complexity": 0, "functions": []})
                 code_health_summary.append({
                     "file_path": file_path,
                     "churn_count": churn_count,
-                    "complexity": complexity_data.get(file_path, 0)
+                    "complexity": file_complexity_data
                 })
             console.print("   - [green]Code health analysis complete.[/]")
         else:
@@ -94,11 +122,23 @@ def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_a
     builder = ReportBuilder(repo_path, start_date, end_date)
     if output == 'markdown':
         report_file = builder.generate_markdown_report(
-            sorted_categorized_commits, executive_summary, author_summary, code_health_summary
+            sorted_categorized_commits,
+            executive_summary,
+            author_summary,
+            code_health_summary,
+            trend_analysis=trend_data,
+            baseline_comparison=baseline_comparison,
+            baseline_name=baseline_name
         )
     else:
         report_file = builder.generate_json_report(
-            sorted_categorized_commits, executive_summary, author_summary, code_health_summary
+            sorted_categorized_commits,
+            executive_summary,
+            author_summary,
+            code_health_summary,
+            trend_analysis=trend_data,
+            baseline_comparison=baseline_comparison,
+            baseline_name=baseline_name
         )
 
     console.print(f"\n[bold green]✅ Report successfully generated![/bold green]")
@@ -107,40 +147,55 @@ def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_a
     cost_monitor.display_summary()
 
 @click.group()
-def main():
-    """
-    Git Analytics CLI: Analyze Git repositories with AI.
-    """
+def cli():
+    """Git Analytics CLI - Analyze your Git repository with AI-powered insights."""
     pass
 
-@main.command()
-@click.argument('repo_path', type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True), default='.')
-@click.option('--branch', default=None, help='The branch to analyze. Defaults to the current active branch.')
-@click.option('--start-date', help='Start date for commit analysis (YYYY-MM-DD).')
-@click.option('--end-date', help='End date for commit analysis (YYYY-MM-DD).')
-@click.option('--output', type=click.Choice(['markdown', 'json'], case_sensitive=False), default='markdown', help='Output format.')
-@click.option('--no-cache', is_flag=True, help='Disable caching for this run.')
-@click.option('--by-author', is_flag=True, help='Include a contributor summary section in the report.')
-@click.option('--code-health', is_flag=True, help='Include a code health (churn & complexity) section.')
-def analyze(repo_path, branch, start_date, end_date, output, no_cache, by_author, code_health):
-    """
-    Analyze a Git repository and generate a report.
-    """
+@cli.command()
+@click.argument('repo_path', type=click.Path(exists=True))
+@click.option('--branch', help='Branch to analyze (defaults to current branch)')
+@click.option('--start-date', help='Start date for analysis (YYYY-MM-DD)')
+@click.option('--end-date', help='End date for analysis (YYYY-MM-DD)')
+@click.option('--output', type=click.Choice(['markdown', 'json']), default='markdown', help='Output format')
+@click.option('--no-cache', is_flag=True, help='Disable caching of AI results')
+@click.option('--no-by-author', is_flag=True, help='Disable contributor summary')
+@click.option('--no-code-health', is_flag=True, help='Disable code health analysis')
+@click.option('--no-trend-analysis', is_flag=True, help='Disable historical trend analysis')
+@click.option('--baseline', 'baseline_name', help='Compare with a specific baseline')
+def analyze(repo_path, branch, start_date, end_date, output, no_cache, no_by_author, no_code_health, no_trend_analysis, baseline_name):
+    """Analyze a Git repository and generate insights."""
+    # If no specific analysis is disabled, run all by default.
+    # The logic inside run_analysis will check the boolean flags.
+    run_analysis(
+        repo_path,
+        branch,
+        start_date,
+        end_date,
+        output,
+        no_cache,
+        not no_by_author,  # Invert the logic
+        not no_code_health, # Invert the logic
+        not no_trend_analysis, # Invert the logic
+        baseline_name
+    )
+
+@cli.command()
+@click.argument('repo_path', type=click.Path(exists=True))
+@click.argument('name')
+@click.argument('commit_hash')
+def set_baseline(repo_path, name, commit_hash):
+    """Set a baseline for historical trend analysis using a specific commit."""
     try:
-        run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author, code_health)
-    except git.InvalidGitRepositoryError:
-        console.print(f"\n[bold red]Error:[/] The path '{repo_path}' is not a valid Git repository.")
-        sys.exit(1)
-    except git.exc.GitCommandError as e:
-        console.print(f"\n[bold red]Git Error:[/] Could not find branch '{branch}'. Please ensure it exists.")
-        console.print(f"   - [dim]{e}[/dim]")
-        sys.exit(1)
-    except ValueError as e:
-        console.print(f"\n[bold red]Configuration Error:[/] {e}")
-        sys.exit(1)
+        analyzer = GitAnalyzer(repo_path)
+        analyzer.set_milestone_baseline(name, commit_hash)
+        console.print(f"[bold green]✅ Successfully set baseline '{name}' at commit {commit_hash}[/]")
     except Exception as e:
-        console.print(f"\n[bold red]An unexpected error occurred:[/] {e}")
+        console.print(f"[bold red]Error setting baseline: {e}[/]")
         sys.exit(1)
+
+def main():
+    """Entry point for CLI and test runner compatibility."""
+    cli()
 
 if __name__ == '__main__':
     main()

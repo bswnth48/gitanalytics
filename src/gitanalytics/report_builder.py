@@ -42,7 +42,10 @@ class ReportBuilder:
         categorized_commits: Dict[str, List[Dict]],
         executive_summary: str,
         author_summary: Optional[Dict] = None,
-        code_health_summary: Optional[List[Dict]] = None
+        code_health_summary: Optional[List[Dict]] = None,
+        trend_analysis: Optional[Dict] = None,
+        baseline_comparison: Optional[Dict] = None,
+        baseline_name: Optional[str] = None
     ) -> Dict:
         """Prepares the context dictionary for rendering templates."""
         # Process commits to ensure dates are strings for the template
@@ -60,7 +63,10 @@ class ReportBuilder:
             "categorized_commits": categorized_commits,
             "executive_summary": executive_summary,
             "author_summary": author_summary,
-            "code_health_summary": code_health_summary
+            "code_health_summary": code_health_summary,
+            "trend_analysis": trend_analysis,
+            "baseline_comparison": baseline_comparison,
+            "baseline_name": baseline_name
         }
 
     def generate_markdown_report(
@@ -68,12 +74,23 @@ class ReportBuilder:
         categorized_commits: Dict[str, List[Dict]],
         executive_summary: str,
         author_summary: Optional[Dict] = None,
-        code_health_summary: Optional[List[Dict]] = None
+        code_health_summary: Optional[List[Dict]] = None,
+        trend_analysis: Optional[Dict] = None,
+        baseline_comparison: Optional[Dict] = None,
+        baseline_name: Optional[str] = None
     ) -> str:
         """
         Generates a Markdown report from the analyzed data.
         """
-        context = self._prepare_context(categorized_commits, executive_summary, author_summary, code_health_summary)
+        context = self._prepare_context(
+            categorized_commits,
+            executive_summary,
+            author_summary,
+            code_health_summary,
+            trend_analysis,
+            baseline_comparison,
+            baseline_name
+        )
         template = self.env.get_template('report.md.j2')
         rendered_report = template.render(context)
 
@@ -87,29 +104,31 @@ class ReportBuilder:
         categorized_commits: Dict[str, List[Dict]],
         executive_summary: str,
         author_summary: Optional[Dict] = None,
-        code_health_summary: Optional[List[Dict]] = None
+        code_health_summary: Optional[List[Dict]] = None,
+        trend_analysis: Optional[Dict] = None,
+        baseline_comparison: Optional[Dict] = None,
+        baseline_name: Optional[str] = None
     ) -> str:
         """
         Generates a JSON report from the analyzed data.
         """
-        context = self._prepare_context(categorized_commits, executive_summary, author_summary, code_health_summary)
-        # We need to handle non-serializable objects for JSON output
-        # For now, let's just dump the prepared context
-        # A more robust solution might involve custom JSON encoders for Pydantic models
+        context = self._prepare_context(
+            categorized_commits,
+            executive_summary,
+            author_summary,
+            code_health_summary,
+            trend_analysis,
+            baseline_comparison,
+            baseline_name
+        )
 
-        # A quick way to make it serializable
-        def make_serializable(o):
-            if isinstance(o, (datetime, Path)):
-                return str(o)
-            if isinstance(o, dict):
-                return {k: make_serializable(v) for k, v in o.items()}
-            if isinstance(o, list):
-                return [make_serializable(i) for i in o]
-            return o
-
-        serializable_context = make_serializable(context)
+        # Convert datetime objects to strings
+        for category, results in context['categorized_commits'].items():
+            for result in results:
+                commit_data = result['commit']
+                commit_data['date'] = self._format_date(commit_data['date'])
 
         filename = self._generate_report_filename("json")
         with open(filename, "w") as f:
-            json.dump(serializable_context, f, indent=4)
+            json.dump(context, f, indent=2)
         return filename

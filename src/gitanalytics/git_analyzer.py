@@ -1,8 +1,10 @@
 import git
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 from collections import defaultdict
+import os
+from .historical_metrics import HistoricalMetrics, TimeSeriesPoint
 
 class Commit(BaseModel):
     """
@@ -42,6 +44,98 @@ class GitAnalyzer:
         # Exclude common non-source files from diffs
         self.exclude_patterns = ['*.json', '*.md', '*.txt', 'LICENSE', '.gitignore']
 
+        # Initialize historical metrics
+        self.historical_metrics = HistoricalMetrics(repo_path)
+
+    def _calculate_file_sizes(self) -> Tuple[int, Dict[str, int]]:
+        """
+        Calculates the total size of all files and individual file sizes.
+        Returns a tuple of (total_size, file_sizes_dict).
+        """
+        total_size = 0
+        file_sizes = {}
+
+        for root, _, files in os.walk(self.repo.working_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                try:
+                    size = os.path.getsize(file_path)
+                    rel_path = os.path.relpath(file_path, self.repo.working_dir)
+                    file_sizes[rel_path] = size
+                    total_size += size
+                except OSError:
+                    continue
+
+        return total_size, file_sizes
+
+    def _calculate_commit_frequency(self, commits: List[Commit], days: int = 30) -> int:
+        """
+        Calculates the average number of commits per day over the specified period.
+        """
+        if not commits:
+            return 0
+
+        end_date = datetime.now(timezone.utc)
+        start_date = end_date - timedelta(days=days)
+
+        recent_commits = [c for c in commits if start_date <= c.date <= end_date]
+        return len(recent_commits) / days
+
+    def collect_historical_metrics(self, branch: Optional[str] = None) -> TimeSeriesPoint:
+        """
+        Collects current metrics for historical tracking.
+        """
+        commits = self.get_commits(branch)
+
+        # Get unique contributors
+        contributors = set(c.author_name for c in commits)
+
+        # Calculate commit frequency (commits per day over last 30 days)
+        commit_frequency = self._calculate_commit_frequency(commits)
+
+        # Calculate file sizes
+        total_size, file_sizes = self._calculate_file_sizes()
+
+        # Create metrics point with UTC timestamp
+        metrics_point = TimeSeriesPoint(
+            timestamp=datetime.now(timezone.utc),
+            num_contributors=len(contributors),
+            commit_frequency=commit_frequency,
+            total_file_size=total_size,
+            file_changes=file_sizes
+        )
+
+        # Save to historical metrics
+        self.historical_metrics.add_metrics_point(metrics_point)
+
+        return metrics_point
+
+    def set_milestone_baseline(self, name: str, commit_hash: str):
+        """
+        Sets a baseline using a specific commit as a milestone.
+        """
+        try:
+            commit = self.repo.commit(commit_hash)
+            self.repo.git.checkout(commit_hash)
+
+            # Collect metrics at this point
+            metrics_point = self.collect_historical_metrics()
+
+            # Set as baseline
+            self.historical_metrics.set_baseline(
+                name=name,
+                reference_date=commit.authored_datetime,
+                reference_commit=commit_hash,
+                metrics=metrics_point
+            )
+
+            # Return to previous state
+            self.repo.git.checkout('-')
+
+        except git.GitCommandError as e:
+            print(f"Error setting milestone baseline: {e}")
+            raise
+
     def get_commits(self, branch: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[Commit]:
         """
         Extracts commits. If a branch is specified, it shows commits on that
@@ -74,11 +168,16 @@ class GitAnalyzer:
             except Exception:
                 diff_text = "Could not retrieve diff."
 
+            # Ensure commit date is timezone-aware
+            commit_date = commit.authored_datetime
+            if commit_date.tzinfo is None:
+                commit_date = commit_date.replace(tzinfo=timezone.utc)
+
             commit_data = {
                 'hexsha': commit.hexsha,
                 'author_name': commit.author.name,
                 'author_email': commit.author.email,
-                'date': commit.authored_datetime,
+                'date': commit_date,
                 'message': commit.message.strip(),
                 'diff': diff_text
             }

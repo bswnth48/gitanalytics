@@ -1,7 +1,7 @@
 import pytest
 import re
 from click.testing import CliRunner
-from gitanalytics.cli import main
+from gitanalytics.cli import cli
 from gitanalytics.ai_summarizer import AISummarizer
 from unittest.mock import MagicMock
 from pathlib import Path
@@ -35,7 +35,7 @@ def test_analyze_command_success(test_repo, monkeypatch):
     monkeypatch.setattr(AISummarizer, "generate_executive_summary", mock_generate_executive_summary)
 
     runner = CliRunner()
-    result = runner.invoke(main, ['analyze', str(test_repo)])
+    result = runner.invoke(cli, ['analyze', str(test_repo)])
 
     assert result.exit_code == 0
     assert "Found 3 commits" in result.output
@@ -49,7 +49,7 @@ def test_analyze_command_no_commits(test_repo):
     """
     runner = CliRunner()
     # Use a date in the future to ensure no commits are found
-    result = runner.invoke(main, ['analyze', str(test_repo), '--start-date', '2999-01-01'])
+    result = runner.invoke(cli, ['analyze', str(test_repo), '--start-date', '2999-01-01'])
 
     assert result.exit_code == 0
     assert "No commits found for the specified criteria." in result.output
@@ -62,7 +62,7 @@ def test_analyze_invalid_repo(tmp_path):
     """
     # tmp_path is a pytest fixture that provides a temporary directory path
     runner = CliRunner()
-    result = runner.invoke(main, ['analyze', str(tmp_path)])
+    result = runner.invoke(cli, ['analyze', str(tmp_path)])
 
     assert result.exit_code != 0 # Should fail
     assert "is not a valid Git repository" in result.output
@@ -91,7 +91,7 @@ def test_analyze_command_by_author(test_repo, monkeypatch):
     monkeypatch.setattr(AISummarizer, "generate_executive_summary", mock_generate_executive_summary)
 
     runner = CliRunner()
-    result = runner.invoke(main, ['analyze', str(test_repo), '--by-author'])
+    result = runner.invoke(cli, ['analyze', str(test_repo), '--by-author'])
 
     assert result.exit_code == 0
 
@@ -134,7 +134,7 @@ def test_analyze_command_code_health(test_repo, monkeypatch):
     monkeypatch.setattr(AISummarizer, "generate_executive_summary", lambda self, summaries: "Mock summary")
 
     runner = CliRunner()
-    result = runner.invoke(main, ['analyze', str(test_repo), '--code-health'])
+    result = runner.invoke(cli, ['analyze', str(test_repo), '--code-health'])
 
     assert result.exit_code == 0
 

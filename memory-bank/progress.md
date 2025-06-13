@@ -1,9 +1,9 @@
 # Progress: Git Analytics CLI
 
-## Current Status: Version 0.3.0 (Production-Ready Features Complete)
+## Current Status: Version 0.4.0 (Implementing Historical Trend Analysis)
 
 ### Description
-All planned production-ready features have been implemented, resulting in a powerful and robust Git analytics tool. The application can perform deep analysis on commits, contributors, and code health, all backed by a comprehensive test suite. The project is now at a stable point, ready for a `v0.3.0` release.
+The tool now has a solid foundation with all core features implemented and tested. We are enhancing its analytical capabilities by adding historical trend analysis, which will provide insights into how the codebase evolves over time.
 
 ## What Works
 
@@ -17,12 +17,16 @@ All planned production-ready features have been implemented, resulting in a powe
 - **Comprehensive Automated Testing**: A full `pytest` suite ensures the stability and correctness of all features.
 - **Flexible Reporting**: Generates reports in Markdown and JSON formats.
 - **Secure Configuration**: Manages API keys and settings securely.
+- **Historical Trend Analysis**: tracks contributors, commit frequency, file size changes; supports baselines and flexible time periods; robust error handling
+- **All tests passing (except known xfail for sys.exit(0))**
+- **CLI/test compatibility improvements**
+- **Robust CLI Experience**: Fixed a regression where only one analysis type would run at a time. All analyses (Thematic, Code Health, Contributor, Trend) now run by default, providing a complete report with a single command. The CLI flags have been updated to be more intuitive (e.g., `--no-code-health` to disable a specific analysis).
 
 ## What's Left to Build
 
 This section tracks ideas and future enhancements.
 
-- **Historical Trend Analysis**: Track key metrics (complexity, churn, commit frequency) over time to visualize project evolution.
+### Future Enhancements
 - **CI/CD Integration**: Provide a mechanism to run `gitanalytics` in a CI/CD pipeline and fail builds or comment on PRs based on the results.
 - **Interactive HTML Reports**: Move beyond Markdown to generate rich, interactive reports with charts and graphs using a library like Plotly or D3.js.
 - **Refined AI Prompting**: Further tune the AI prompts for even more accurate and insightful summaries and classifications.
