@@ -39,6 +39,7 @@
 
 *Scan performed using `{{ security_results.tool }}` for `{{ security_results.language }}`.*
 
+{% if security_results.findings and (security_results.findings.HIGH or security_results.findings.MEDIUM or security_results.findings.LOW) %}
 {% if security_results.findings.HIGH %}
 #### 🔴 High Severity Issues
 | File | Line | Issue |
@@ -65,13 +66,11 @@
 | `{{ issue.file }}` | {{ issue.line }} | {{ issue.issue }} |
 {% endfor %}
 {% endif %}
-
-{% if not security_results.findings.HIGH and not security_results.findings.MEDIUM and not security_results.findings.LOW %}
+{% elif security_results.error %}
+*🔴 {{ security_results.error }}*
+{% else %}
 *✅ No security issues found.*
 {% endif %}
-{% elif security_results and security_results.error %}
-## Security Analysis
-*🔴 {{ security_results.error }}*
 {% endif %}
 
 ## Thematic Analysis

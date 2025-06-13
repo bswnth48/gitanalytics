@@ -27,6 +27,8 @@ class SecurityAnalyzer:
 
         if language == 'Python':
             return self._run_bandit()
+        elif language in ['JavaScript', 'TypeScript']:
+            return self._run_npm_audit()
 
         # In the future, other languages can be added here
         # e.g., if language == 'JavaScript': return self._run_npm_audit()
@@ -102,4 +104,62 @@ class SecurityAnalyzer:
                 "language": "Python",
                 "findings": {},
                 "error": f"An unexpected error occurred: {str(e)}"
+            }
+
+    def _run_npm_audit(self) -> Dict[str, Any]:
+        """
+        Runs `npm audit` to find vulnerabilities in a JavaScript/TypeScript project.
+        """
+        package_lock_path = os.path.join(self.repo_path, 'package-lock.json')
+        if not os.path.exists(package_lock_path):
+            return {
+                "tool": "npm audit",
+                "language": "JavaScript/TypeScript",
+                "findings": {},
+                "error": "package-lock.json not found. Cannot run npm audit."
+            }
+
+        try:
+            # We run npm audit in the directory containing package-lock.json
+            process = subprocess.run(
+                ['npm', 'audit', '--json'],
+                cwd=self.repo_path,
+                capture_output=True,
+                text=True
+            )
+
+            # npm audit exits with a non-zero code if vulnerabilities are found,
+            # so we can't use check=True. We inspect the JSON output instead.
+            results = json.loads(process.stdout)
+
+            findings = {"HIGH": [], "MEDIUM": [], "LOW": []}
+            vulnerabilities = results.get('vulnerabilities', {})
+
+            for name, details in vulnerabilities.items():
+                severity = details.get('severity').upper()
+                if severity in findings:
+                    findings[severity].append({
+                        "file": "package-lock.json",
+                        "line": f"dependency: {name}",
+                        "issue": f"{details.get('via')[0]['title']} in `{name}`. More info: {details.get('via')[0]['url']}"
+                    })
+
+            return {
+                "tool": "npm audit",
+                "language": "JavaScript/TypeScript",
+                "findings": findings
+            }
+        except FileNotFoundError:
+            return {
+                "tool": "npm audit",
+                "language": "JavaScript/TypeScript",
+                "findings": {},
+                "error": "npm command not found. Please ensure Node.js and npm are installed."
+            }
+        except (json.JSONDecodeError, Exception) as e:
+            return {
+                "tool": "npm audit",
+                "language": "JavaScript/TypeScript",
+                "findings": {},
+                "error": f"An unexpected error occurred during npm audit: {str(e)}"
             }
