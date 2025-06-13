@@ -9,12 +9,13 @@ from .report_builder import ReportBuilder
 from .cache_manager import CacheManager
 from .cost_monitor import CostMonitor
 from .complexity_analyzer import ComplexityAnalyzer
+from .security_analyzer import SecurityAnalyzer
 import git
 
 # Initialize a Rich Console for beautiful output
 console = Console()
 
-def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author, code_health, trend_analysis, baseline_name):
+def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author, code_health, trend_analysis, security, baseline_name):
     """Core logic for the analysis, separated for clarity and testability."""
     console.print(f"[bold green]🚀 Starting analysis for repository:[/] [cyan]{repo_path}[/]")
     if branch:
@@ -83,6 +84,25 @@ def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_a
         else:
             console.print("   - [yellow]No Python file changes found to analyze for code health.[/]")
 
+    # --- Security Analysis ---
+    security_results = None
+    if security:
+        console.print("\n[bold yellow]🛡️  Performing security analysis...[/bold yellow]")
+        security_analyzer = SecurityAnalyzer(repo_path)
+        security_results = security_analyzer.analyze()
+
+        # --- DEBUG PRINT ---
+        console.print("[bold cyan]-- DEBUG: Security Results from Analyzer --[/]")
+        console.print(security_results)
+        console.print("[bold cyan]-- END DEBUG --[/]")
+
+        if security_results and security_results.get("error"):
+            console.print(f"   - [bold red]Error:[/] {security_results['error']}")
+        elif security_results:
+            console.print(f"   - [green]Security analysis complete (using {security_results['tool']}).[/]")
+        else:
+            console.print("   - [yellow]Skipped security analysis: unsupported language or no findings.[/yellow]")
+
     commits = analyzer.get_commits(branch, start_date, end_date)
 
     if not commits:
@@ -126,6 +146,7 @@ def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_a
             executive_summary,
             author_summary,
             code_health_summary,
+            security_results,
             trend_analysis=trend_data,
             baseline_comparison=baseline_comparison,
             baseline_name=baseline_name
@@ -136,6 +157,7 @@ def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_a
             executive_summary,
             author_summary,
             code_health_summary,
+            security_results,
             trend_analysis=trend_data,
             baseline_comparison=baseline_comparison,
             baseline_name=baseline_name
@@ -161,8 +183,9 @@ def cli():
 @click.option('--no-by-author', is_flag=True, help='Disable contributor summary')
 @click.option('--no-code-health', is_flag=True, help='Disable code health analysis')
 @click.option('--no-trend-analysis', is_flag=True, help='Disable historical trend analysis')
+@click.option('--no-security', is_flag=True, help='Disable security analysis')
 @click.option('--baseline', 'baseline_name', help='Compare with a specific baseline')
-def analyze(repo_path, branch, start_date, end_date, output, no_cache, no_by_author, no_code_health, no_trend_analysis, baseline_name):
+def analyze(repo_path, branch, start_date, end_date, output, no_cache, no_by_author, no_code_health, no_trend_analysis, no_security, baseline_name):
     """Analyze a Git repository and generate insights."""
     # If no specific analysis is disabled, run all by default.
     # The logic inside run_analysis will check the boolean flags.
@@ -176,6 +199,7 @@ def analyze(repo_path, branch, start_date, end_date, output, no_cache, no_by_aut
         not no_by_author,  # Invert the logic
         not no_code_health, # Invert the logic
         not no_trend_analysis, # Invert the logic
+        not no_security, # Invert the logic
         baseline_name
     )
 

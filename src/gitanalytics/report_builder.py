@@ -43,6 +43,7 @@ class ReportBuilder:
         executive_summary: str,
         author_summary: Optional[Dict] = None,
         code_health_summary: Optional[List[Dict]] = None,
+        security_results: Optional[Dict] = None,
         trend_analysis: Optional[Dict] = None,
         baseline_comparison: Optional[Dict] = None,
         baseline_name: Optional[str] = None
@@ -64,6 +65,7 @@ class ReportBuilder:
             "executive_summary": executive_summary,
             "author_summary": author_summary,
             "code_health_summary": code_health_summary,
+            "security_results": security_results,
             "trend_analysis": trend_analysis,
             "baseline_comparison": baseline_comparison,
             "baseline_name": baseline_name
@@ -75,6 +77,7 @@ class ReportBuilder:
         executive_summary: str,
         author_summary: Optional[Dict] = None,
         code_health_summary: Optional[List[Dict]] = None,
+        security_results: Optional[Dict] = None,
         trend_analysis: Optional[Dict] = None,
         baseline_comparison: Optional[Dict] = None,
         baseline_name: Optional[str] = None
@@ -87,6 +90,7 @@ class ReportBuilder:
             executive_summary,
             author_summary,
             code_health_summary,
+            security_results,
             trend_analysis,
             baseline_comparison,
             baseline_name
@@ -105,6 +109,7 @@ class ReportBuilder:
         executive_summary: str,
         author_summary: Optional[Dict] = None,
         code_health_summary: Optional[List[Dict]] = None,
+        security_results: Optional[Dict] = None,
         trend_analysis: Optional[Dict] = None,
         baseline_comparison: Optional[Dict] = None,
         baseline_name: Optional[str] = None
@@ -117,6 +122,7 @@ class ReportBuilder:
             executive_summary,
             author_summary,
             code_health_summary,
+            security_results,
             trend_analysis,
             baseline_comparison,
             baseline_name
