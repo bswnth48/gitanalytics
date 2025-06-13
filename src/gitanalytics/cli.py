@@ -7,12 +7,13 @@ from .ai_summarizer import AISummarizer
 from .report_builder import ReportBuilder
 from .cache_manager import CacheManager
 from .cost_monitor import CostMonitor
+from .complexity_analyzer import ComplexityAnalyzer
 import git
 
 # Initialize a Rich Console for beautiful output
 console = Console()
 
-def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author):
+def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author, code_health):
     """Core logic for the analysis, separated for clarity and testability."""
     console.print(f"[bold green]🚀 Starting analysis for repository:[/] [cyan]{repo_path}[/]")
     if branch:
@@ -27,6 +28,33 @@ def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_a
         console.print("\n[yellow]Cache has been cleared for this run.[/yellow]")
 
     analyzer = GitAnalyzer(repo_path)
+
+    # --- Code Health Analysis ---
+    code_health_summary = None
+    if code_health:
+        console.print("\n[bold yellow]🩺 Analyzing code health...[/bold yellow]")
+        churn_data = analyzer.calculate_churn(branch, start_date, end_date)
+
+        # Get top 5 most changed files
+        top_churn_files = sorted(churn_data.items(), key=lambda item: item[1], reverse=True)[:5]
+
+        if top_churn_files:
+            complexity_analyzer = ComplexityAnalyzer()
+            file_paths_to_analyze = [item[0] for item in top_churn_files]
+            complexity_data = complexity_analyzer.analyze_files(repo_path, file_paths_to_analyze)
+
+            # Combine churn and complexity data
+            code_health_summary = []
+            for file_path, churn_count in top_churn_files:
+                code_health_summary.append({
+                    "file_path": file_path,
+                    "churn_count": churn_count,
+                    "complexity": complexity_data.get(file_path, 0)
+                })
+            console.print("   - [green]Code health analysis complete.[/]")
+        else:
+            console.print("   - [yellow]No Python file changes found to analyze for code health.[/]")
+
     commits = analyzer.get_commits(branch, start_date, end_date)
 
     if not commits:
@@ -65,9 +93,13 @@ def run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_a
 
     builder = ReportBuilder(repo_path, start_date, end_date)
     if output == 'markdown':
-        report_file = builder.generate_markdown_report(sorted_categorized_commits, executive_summary, author_summary)
+        report_file = builder.generate_markdown_report(
+            sorted_categorized_commits, executive_summary, author_summary, code_health_summary
+        )
     else:
-        report_file = builder.generate_json_report(sorted_categorized_commits, executive_summary, author_summary)
+        report_file = builder.generate_json_report(
+            sorted_categorized_commits, executive_summary, author_summary, code_health_summary
+        )
 
     console.print(f"\n[bold green]✅ Report successfully generated![/bold green]")
     console.print(f"   - [bold]File:[/] {report_file}")
@@ -89,12 +121,13 @@ def main():
 @click.option('--output', type=click.Choice(['markdown', 'json'], case_sensitive=False), default='markdown', help='Output format.')
 @click.option('--no-cache', is_flag=True, help='Disable caching for this run.')
 @click.option('--by-author', is_flag=True, help='Include a contributor summary section in the report.')
-def analyze(repo_path, branch, start_date, end_date, output, no_cache, by_author):
+@click.option('--code-health', is_flag=True, help='Include a code health (churn & complexity) section.')
+def analyze(repo_path, branch, start_date, end_date, output, no_cache, by_author, code_health):
     """
     Analyze a Git repository and generate a report.
     """
     try:
-        run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author)
+        run_analysis(repo_path, branch, start_date, end_date, output, no_cache, by_author, code_health)
     except git.InvalidGitRepositoryError:
         console.print(f"\n[bold red]Error:[/] The path '{repo_path}' is not a valid Git repository.")
         sys.exit(1)

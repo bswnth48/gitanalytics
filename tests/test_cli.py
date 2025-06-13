@@ -113,3 +113,44 @@ def test_analyze_command_by_author(test_repo, monkeypatch):
 
     # Clean up the generated file
     report_path.unlink()
+
+def test_analyze_command_code_health(test_repo, monkeypatch):
+    """
+    Tests that the --code-health flag correctly adds the code health summary.
+    """
+    # This mock needs to be realistic enough for the whole flow to work
+    def mock_summarize_and_classify(self, commits):
+        results = []
+        for commit in commits:
+             results.append({
+                "commit_hash": commit.commit_hash,
+                "category": "Features", # Provide dummy data
+                "summary": "Mock summary", # Provide dummy data
+                "commit": commit.model_dump(mode='json')
+             })
+        return results
+
+    monkeypatch.setattr(AISummarizer, "summarize_and_classify_commits", mock_summarize_and_classify)
+    monkeypatch.setattr(AISummarizer, "generate_executive_summary", lambda self, summaries: "Mock summary")
+
+    runner = CliRunner()
+    result = runner.invoke(main, ['analyze', str(test_repo), '--code-health'])
+
+    assert result.exit_code == 0
+
+    # Find the report filename and read its content
+    match = re.search(r"File:\s*(git_analytics_report_\S+\.md)", result.output)
+    assert match, "Report filename not found in command output"
+    report_filename = match.group(1)
+    report_path = Path(report_filename)
+    assert report_path.exists()
+    report_content = report_path.read_text()
+
+    assert "Code Health Summary" in report_content
+    # Our test repo now creates and modifies these specific python files
+    assert "| `module_a.py`" in report_content
+    assert "| `module_b.py`" in report_content
+    # module_a.py was changed twice, so its churn should be 2
+    assert "| 2 " in report_content
+
+    report_path.unlink()

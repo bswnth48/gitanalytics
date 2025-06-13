@@ -1,7 +1,8 @@
 import git
 from datetime import datetime
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
+from collections import defaultdict
 
 class Commit(BaseModel):
     """
@@ -19,7 +20,7 @@ class Commit(BaseModel):
 
 class GitAnalyzer:
     """
-    Analyzes a Git repository to extract commit information.
+    Analyzes a Git repository to extract commit information and calculate churn.
     """
     def __init__(self, repo_path: str):
         """
@@ -38,6 +39,9 @@ class GitAnalyzer:
             print(f"Error: {e}")
             raise
 
+        # Exclude common non-source files from diffs
+        self.exclude_patterns = ['*.json', '*.md', '*.txt', 'LICENSE', '.gitignore']
+
     def get_commits(self, branch: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[Commit]:
         """
         Extracts commits. If a branch is specified, it shows commits on that
@@ -45,7 +49,6 @@ class GitAnalyzer:
         from the current HEAD.
         """
         if branch:
-            # Assumes 'main' is the base branch. This could be configurable in the future.
             commit_spec = f"main..{branch}"
         else:
             commit_spec = self.repo.head.ref
@@ -59,7 +62,6 @@ class GitAnalyzer:
         try:
             commits_iter = self.repo.iter_commits(commit_spec, **kwargs)
         except git.GitCommandError:
-             # Fallback for initial commit or other issues
             commits_iter = self.repo.iter_commits(branch or self.repo.head.ref, **kwargs)
 
         commit_list = []
@@ -83,3 +85,40 @@ class GitAnalyzer:
             commit_list.append(Commit.model_validate(commit_data))
 
         return commit_list
+
+    def calculate_churn(self, branch: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict[str, int]:
+        """
+        Calculates the churn (number of times each file was modified) for Python files.
+
+        Args:
+            branch: The branch to analyze.
+            start_date: The start date for analysis.
+            end_date: The end date for analysis.
+
+        Returns:
+            A dictionary mapping file paths to their modification count.
+        """
+        if branch:
+            commit_spec = f"main..{branch}"
+        else:
+            commit_spec = self.repo.head.ref
+
+        kwargs = {}
+        if start_date:
+            kwargs['after'] = start_date
+        if end_date:
+            kwargs['before'] = end_date
+
+        try:
+            commits = list(self.repo.iter_commits(commit_spec, **kwargs))
+        except git.GitCommandError:
+            commits = list(self.repo.iter_commits(branch or self.repo.head.ref, **kwargs))
+
+        churn_data = defaultdict(int)
+
+        for commit in commits:
+            for file_path in commit.stats.files:
+                if file_path.endswith('.py'):
+                    churn_data[file_path] += 1
+
+        return churn_data

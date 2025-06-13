@@ -12,8 +12,8 @@ def test_get_all_commits(test_repo):
     commits = analyzer.get_commits()
     # The conftest fixture creates 3 commits
     assert len(commits) == 3
-    assert commits[0].message == "refactor: Modify first file"
-    assert "file1.txt" in commits[0].diff
+    assert commits[0].message == "refactor: Modify module_a"
+    assert "module_a.py" in commits[0].diff
 
 def test_no_commits_found(test_repo):
     """
@@ -41,7 +41,7 @@ def test_commit_content(test_repo):
     commits = analyzer.get_commits()
     latest_commit = commits[0]
 
-    assert latest_commit.message == "refactor: Modify first file"
+    assert latest_commit.message == "refactor: Modify module_a"
     assert "Test User" in latest_commit.author_name # Default git user
     assert isinstance(latest_commit.date, datetime)
     assert len(latest_commit.commit_hash) == 40

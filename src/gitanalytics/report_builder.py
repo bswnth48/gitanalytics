@@ -37,7 +37,13 @@ class ReportBuilder:
             return date_obj.strftime('%Y-%m-%d %H:%M:%S')
         return "Unknown Date"
 
-    def _prepare_context(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str, author_summary: Optional[Dict] = None) -> Dict:
+    def _prepare_context(
+        self,
+        categorized_commits: Dict[str, List[Dict]],
+        executive_summary: str,
+        author_summary: Optional[Dict] = None,
+        code_health_summary: Optional[List[Dict]] = None
+    ) -> Dict:
         """Prepares the context dictionary for rendering templates."""
         # Process commits to ensure dates are strings for the template
         for category, results in categorized_commits.items():
@@ -53,14 +59,21 @@ class ReportBuilder:
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "categorized_commits": categorized_commits,
             "executive_summary": executive_summary,
-            "author_summary": author_summary
+            "author_summary": author_summary,
+            "code_health_summary": code_health_summary
         }
 
-    def generate_markdown_report(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str, author_summary: Optional[Dict] = None) -> str:
+    def generate_markdown_report(
+        self,
+        categorized_commits: Dict[str, List[Dict]],
+        executive_summary: str,
+        author_summary: Optional[Dict] = None,
+        code_health_summary: Optional[List[Dict]] = None
+    ) -> str:
         """
         Generates a Markdown report from the analyzed data.
         """
-        context = self._prepare_context(categorized_commits, executive_summary, author_summary)
+        context = self._prepare_context(categorized_commits, executive_summary, author_summary, code_health_summary)
         template = self.env.get_template('report.md.j2')
         rendered_report = template.render(context)
 
@@ -69,11 +82,17 @@ class ReportBuilder:
             f.write(rendered_report)
         return filename
 
-    def generate_json_report(self, categorized_commits: Dict[str, List[Dict]], executive_summary: str, author_summary: Optional[Dict] = None) -> str:
+    def generate_json_report(
+        self,
+        categorized_commits: Dict[str, List[Dict]],
+        executive_summary: str,
+        author_summary: Optional[Dict] = None,
+        code_health_summary: Optional[List[Dict]] = None
+    ) -> str:
         """
         Generates a JSON report from the analyzed data.
         """
-        context = self._prepare_context(categorized_commits, executive_summary, author_summary)
+        context = self._prepare_context(categorized_commits, executive_summary, author_summary, code_health_summary)
         # We need to handle non-serializable objects for JSON output
         # For now, let's just dump the prepared context
         # A more robust solution might involve custom JSON encoders for Pydantic models
