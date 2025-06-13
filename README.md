@@ -1,112 +1,96 @@
-# Git Analytics CLI
+# AI-GitAnalytics-CLI
 
-[![Tests](https://github.com/your-username/your-repo/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/your-repo/actions)
-[![PyPI version](https://badge.fury.io/py/gitanalytics.svg)](https://badge.fury.io/py/gitanalytics)
+[![PyPI version](https://badge.fury.io/py/ai-gitanalytics-cli.svg)](https://badge.fury.io/py/ai-gitanalytics-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Git Analytics** is a powerful, AI-driven command-line tool that transforms your Git repository history into insightful, easy-to-read reports. It intelligently summarizes commits, groups them by theme, and provides high-level executive summaries, helping you understand project progress at a glance.
+**AI-GitAnalytics-CLI** is a powerful, AI-driven command-line tool that transforms your Git repository history into insightful, easy-to-read reports. It intelligently summarizes commits, groups them by theme, and provides actionable insights on code health and security.
 
 ---
 
-## Features
-
--   **🤖 AI-Powered Summaries:** Uses advanced AI models to generate detailed, code-aware summaries for each commit.
--   **🧩 Thematic Analysis:** Automatically categorizes commits into themes like `Features`, `Bug Fixes`, `Documentation`, and `Refactoring`.
--   **📄 Executive Summaries:** Generates a high-level, multi-sentence summary of the entire analysis period, perfect for reports and stakeholder updates.
--   **📊 Contributor Analysis:** Generate reports summarizing work by author to see who is contributing what.
--   **🩺 Code Health Insights:** Identify high-churn files and analyze their complexity to flag potential technical debt.
--   **🌿 Branch Selection:** Analyze any branch in your repository, not just the one you have checked out, using the `--branch` option.
--   **⚡️ Smart Caching:** Caches results to provide near-instantaneous reports on subsequent runs and to minimize API calls.
--   **💰 Cost Monitoring:** Tracks API token usage and provides an estimated cost for each analysis run, giving you full visibility.
--   **📝 Multiple Formats:** Generate reports in both Markdown and JSON formats.
-
 ## Installation
 
-This project is managed with `uv`, a fast and modern Python package manager.
+You can install the tool directly from PyPI:
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/gitanalytics.git
-    cd gitanalytics
-    ```
+```bash
+pip install ai-gitanalytics-cli
+```
 
-2.  **Create and activate a virtual environment:**
-    ```bash
-    uv venv
-    source .venv/bin/activate  # On Windows, use `.venv\Scripts\activate`
-    ```
+## Configuration: Your API Key
 
-3.  **Install the package:**
-    ```bash
-    uv pip install -e .
-    ```
-    The tool is now available as the `gitanalytics` command.
+To perform its analysis, the tool requires a free API key from **[OpenRouter](https://openrouter.ai/)**.
 
-## Configuration
+#### 1. Get your Free OpenRouter Key
+- Sign up for a free account on [OpenRouter.ai](https://openrouter.ai/).
+- Navigate to your **Account Settings** and create a new API key.
+- Copy the key.
 
-The tool requires an API key from an OpenAI-compatible service like OpenRouter.
+#### 2. Set up your `.env` file
+The tool loads the API key from a `.env` file. You need to create this file and place it in your user **home directory**.
 
-1.  **Create a `.env` file** in the root of the project by copying the example file:
-    ```bash
-    cp .env.example .env
-    ```
+- **macOS/Linux:** `~/.env`
+- **Windows:** `C:\Users\YourUsername\.env`
 
-2.  **Edit the `.env` file** and add your API key:
-    ```
-    # .env
-    OPENROUTER_API_KEY="your-secret-key-goes-here"
-    OPENROUTER_MODEL_NAME="qwen/qwen-2.5-72b-chat"
-    ```
+Create this file and add your key to it like this:
+
+```
+# ~/.env file
+OPENROUTER_API_KEY="your-secret-key-goes-here"
+```
+
+The tool will now automatically find and use your key.
+
+## How it Works
+
+This tool is designed to be language-aware. It automatically detects the primary language of your repository (e.g., Python, JavaScript) and uses the appropriate tools for the job.
+
+- **Language-Agnostic Analysis:** Thematic summaries, contributor analysis, and historical trends work for any language.
+- **Language-Specific Analysis:**
+    - For **Python**, it uses `bandit` for security analysis and `radon` for code complexity.
+    - For **JavaScript/TypeScript**, it uses `npm audit` for security analysis.
+    - *Support for more languages is coming soon!*
 
 ## Usage
 
-The main command is `analyze`. It analyzes the repository in the current directory by default.
+Navigate to any Git repository on your machine and run the `analyze` command.
 
 ```bash
-gitanalytics analyze [OPTIONS] [REPO_PATH]
+ai-gitanalytics-cli analyze .
 ```
 
-### Examples
+This single command will perform all analyses (thematic, contributor, code health, security, and historical) and generate a detailed Markdown report in your current directory.
 
--   **Analyze the current repository:**
-    ```bash
-    gitanalytics analyze
-    ```
+### Common Options
 
--   **Analyze a specific repository path:**
-    ```bash
-    gitanalytics analyze /path/to/your/repo
-    ```
+- **Generate a JSON report:**
+  ```bash
+  ai-gitanalytics-cli analyze . --output json
+  ```
 
--   **Analyze a specific branch:**
-    ```bash
-    gitanalytics analyze --branch feature/new-login
-    ```
+- **Analyze a specific branch:**
+  ```bash
+  ai-gitanalytics-cli analyze . --branch feature/new-login
+  ```
 
--   **Analyze commits within a date range:**
-    ```bash
-    gitanalytics analyze --start-date 2023-01-01 --end-date 2023-01-31
-    ```
+- **Disable a specific analysis (e.g., security):**
+  ```bash
+  ai-gitanalytics-cli analyze . --no-security
+  ```
 
--   **Generate a JSON report:**
-    ```bash
-    gitanalytics analyze --output json
-    ```
+- **Force a fresh analysis by ignoring the cache:**
+  ```bash
+  ai-gitanalytics-cli analyze . --no-cache
+  ```
 
--   **Force a fresh analysis by ignoring the cache:**
-    ```bash
-    gitanalytics analyze --no-cache
-    ```
+## Features
 
--   **Generate a report summarized by author:**
-    ```bash
-    gitanalytics analyze --by-author
-    ```
-
--   **Include a code health summary in the report:**
-    ```bash
-    gitanalytics analyze --code-health
-    ```
+- **🤖 AI-Powered Summaries:** Uses advanced AI models to generate detailed, code-aware summaries for each commit.
+- **🧩 Thematic Analysis:** Automatically categorizes commits into themes like `Features`, `Bug Fixes`, `Documentation`, and `Refactoring`.
+- **📄 Executive Summaries:** Generates a high-level summary of the entire analysis period.
+- **🛡️ Security Analysis:** Scans your code for potential vulnerabilities using industry-standard tools (`bandit` for Python, `npm audit` for JS).
+-   **🩺 Code Health Insights:** Identifies high-churn files and analyzes their complexity to flag potential technical debt.
+- **📊 Contributor Analysis:** Summarizes work by author to see who is contributing what.
+- **📈 Historical Trends:** Tracks how your project evolves over time.
+- **⚡️ Smart Caching:** Caches results to provide near-instantaneous reports on subsequent runs.
 
 ## Development
 
